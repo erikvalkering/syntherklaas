@@ -2,6 +2,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::panic;
+use std::io::Write;
 
 use crate::waveform::{Oscillator, WaveShape};
 
@@ -20,6 +21,23 @@ impl AudioPlayer {
             shape,
             duration,
         }
+    }
+
+    pub fn stream_audio(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let sample_rate = 48000u32;
+        let mut osc = Oscillator::new(sample_rate as f32, self.frequency);
+        let total_samples = (sample_rate as f32 * self.duration) as u32;
+        
+        let mut stdout = std::io::stdout().lock();
+
+        for _ in 0..total_samples {
+            let value = osc.next_sample(self.shape);
+            let sample = (value * self.volume * i16::MAX as f32) as i16;
+            stdout.write_all(&sample.to_le_bytes())?;
+        }
+
+        stdout.flush()?;
+        Ok(())
     }
 
     pub fn play(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -108,8 +126,8 @@ impl AudioPlayer {
         }
 
         writer.finalize()?;
-        println!("Generated audio file: {}", filename);
-        println!("Duration: {:.1}s at {} Hz, {} wave, {:.0}% volume", 
+        eprintln!("Generated audio file: {}", filename);
+        eprintln!("Duration: {:.1}s at {} Hz, {} wave, {:.0}% volume", 
                  self.duration, self.frequency, 
                  shape_name(self.shape), self.volume * 100.0);
 
