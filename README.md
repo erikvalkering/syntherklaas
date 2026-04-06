@@ -26,17 +26,37 @@ You'll be prompted to choose waveform shape (sine/square/triangle/sawtooth), fre
 
 ### Audio Backend
 
-Syntherklaas uses **PulseAudio** (via `pacat`) as the primary audio backend. This provides low-latency, real-time audio output in Termux. The app spawns a `pacat` process and streams PCM audio samples directly to it.
+Syntherklaas supports two audio backends:
+
+**cpal** (primary, cross-platform)
+- Uses cpal for audio output on systems where it works
+
+**PulseAudio** (fallback)
+- Uses pacat (PulseAudio client) for low-latency streaming
+- Automatically used as fallback if cpal fails or panics
+
+#### Selecting a Backend
+
+By default, cpal is tried first, then falls back to PulseAudio if cpal fails:
+
+```bash
+cargo run -- -f 440 -d 2  # Uses cpal if available, falls back to PulseAudio
+```
+
+Force a specific backend without fallback:
+
+```bash
+cargo run -- -f 440 -d 2 --backend cpal      # Use cpal only
+cargo run -- -f 440 -d 2 --backend pulse     # Use PulseAudio only
+```
+
+**Note on Termux**: cpal panics on Termux due to lack of Android NDK context initialization. Use `--backend pulse` for immediate audio playback, or omit the flag to auto-fallback.
+
+#### Audio Format
 
 - **Sample rate**: 48000 Hz
 - **Format**: Signed 16-bit little-endian PCM (s16le)
 - **Channels**: Mono (1 channel)
-
-**Note**: `pacat` must be installed. On Termux, install it with:
-
-```bash
-pkg install pulseaudio
-```
 
 ## Waveforms
 
@@ -44,3 +64,4 @@ pkg install pulseaudio
 - `square` - Classic square wave
 - `triangle` - Triangular wave
 - `sawtooth` - Sawtooth wave
+

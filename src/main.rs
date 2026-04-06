@@ -3,7 +3,7 @@ mod audio;
 
 use clap::Parser;
 use waveform::WaveShape;
-use audio::AudioPlayer;
+use audio::{AudioPlayer, AudioBackend};
 use std::io::{self, Write};
 
 #[derive(Parser, Debug)]
@@ -29,6 +29,10 @@ struct Args {
     /// Interactive mode (prompt for values)
     #[arg(short, long)]
     interactive: bool,
+
+    /// Audio backend: cpal or pulse (default: auto-fallback from cpal to pulse)
+    #[arg(long)]
+    backend: Option<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -54,7 +58,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.frequency, args.shape, args.volume * 100.0, args.duration
     );
 
-    let player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
+    let mut player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
+
+    if let Some(backend_str) = args.backend {
+        let backend = match backend_str.to_lowercase().as_str() {
+            "cpal" => AudioBackend::Cpal,
+            "pulse" => AudioBackend::PulseAudio,
+            _ => return Err(format!("Unknown backend '{}'. Use: cpal, pulse", backend_str).into()),
+        };
+        player = player.with_backend(backend);
+    }
+
     player.play()?;
 
     eprintln!("Done!");
@@ -101,5 +115,6 @@ fn get_interactive_input() -> Result<Args, Box<dyn std::error::Error>> {
         volume: volume.trim().parse()?,
         duration: duration.trim().parse()?,
         interactive: false,
+        backend: None,
     })
 }
