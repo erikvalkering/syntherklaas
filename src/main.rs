@@ -37,9 +37,12 @@ struct Args {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = Args::parse();
+    
+    let stream_mode = args.stream;
 
     if args.interactive {
         args = get_interactive_input()?;
+        args.stream = stream_mode;
     }
 
     let shape = WaveShape::from_str(&args.shape)
@@ -77,29 +80,29 @@ fn get_interactive_input() -> Result<Args, Box<dyn std::error::Error>> {
     let mut volume = String::new();
     let mut duration = String::new();
 
-    print!("Enter waveform shape (sine/square/triangle/sawtooth) [sine]: ");
-    io::stdout().flush()?;
+    eprint!("Enter waveform shape (sine/square/triangle/sawtooth) [sine]: ");
+    io::stderr().flush()?;
     io::stdin().read_line(&mut shape)?;
     if shape.trim().is_empty() {
         shape = "sine".to_string();
     }
 
-    print!("Enter frequency in Hz [440]: ");
-    io::stdout().flush()?;
+    eprint!("Enter frequency in Hz [440]: ");
+    io::stderr().flush()?;
     io::stdin().read_line(&mut frequency)?;
     if frequency.trim().is_empty() {
         frequency = "440".to_string();
     }
 
-    print!("Enter volume (0.0-1.0) [0.5]: ");
-    io::stdout().flush()?;
+    eprint!("Enter volume (0.0-1.0) [0.5]: ");
+    io::stderr().flush()?;
     io::stdin().read_line(&mut volume)?;
     if volume.trim().is_empty() {
         volume = "0.5".to_string();
     }
 
-    print!("Enter duration in seconds [2]: ");
-    io::stdout().flush()?;
+    eprint!("Enter duration in seconds [2]: ");
+    io::stderr().flush()?;
     io::stdin().read_line(&mut duration)?;
     if duration.trim().is_empty() {
         duration = "2".to_string();
