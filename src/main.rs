@@ -29,20 +29,13 @@ struct Args {
     /// Interactive mode (prompt for values)
     #[arg(short, long)]
     interactive: bool,
-
-    /// Stream raw audio to stdout (for piping to pacat)
-    #[arg(long)]
-    stream: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = Args::parse();
-    
-    let stream_mode = args.stream;
 
     if args.interactive {
         args = get_interactive_input()?;
-        args.stream = stream_mode;
     }
 
     let shape = WaveShape::from_str(&args.shape)
@@ -56,21 +49,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Volume must be between 0.0 and 1.0".into());
     }
 
-    if args.stream {
-        let player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
-        player.stream_audio()?;
-    } else {
-        eprintln!(
-            "Playing {} Hz {} wave at {:.0}% volume for {:.1} seconds...",
-            args.frequency, args.shape, args.volume * 100.0, args.duration
-        );
+    eprintln!(
+        "Playing {} Hz {} wave at {:.0}% volume for {:.1} seconds...",
+        args.frequency, args.shape, args.volume * 100.0, args.duration
+    );
 
-        let player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
-        player.play()?;
+    let player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
+    player.play()?;
 
-        eprintln!("Done!");
-    }
-
+    eprintln!("Done!");
     Ok(())
 }
 
@@ -114,6 +101,5 @@ fn get_interactive_input() -> Result<Args, Box<dyn std::error::Error>> {
         volume: volume.trim().parse()?,
         duration: duration.trim().parse()?,
         interactive: false,
-        stream: false,
     })
 }
