@@ -1,8 +1,6 @@
 use crate::waveform::{Oscillator, WaveShape};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use std::process::{Command, Stdio};
-use std::io::Write;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AudioBackend {
@@ -105,26 +103,41 @@ impl AudioPlayer {
     }
 
     fn play_pulseaudio(&self) -> Result<(), Box<dyn std::error::Error>> {
+        use libpulse_simple_binding::Simple;
+        use libpulse_binding::stream::Direction;
+        use libpulse_binding::sample::{Spec, Format};
+
         let sample_rate = 48000u32;
         let mut osc = Oscillator::new(sample_rate as f32, self.frequency);
         let total_samples = (sample_rate as f32 * self.duration) as u32;
 
-        let mut pacat = Command::new("pacat")
-            .args(&["--rate=48000", "--channels=1", "--format=s16le"])
-            .stdin(Stdio::piped())
-            .spawn()?;
+        let spec = Spec {
+            format: Format::S16le,
+            channels: 1,
+            rate: sample_rate,
+        };
 
-        let mut stdin = pacat.stdin.take()
-            .ok_or("Failed to open pacat stdin")?;
+        let s = Simple::new(
+            None,                    // Use the default server
+            "syntherklaas",          // Application name
+            Direction::Playback,     // Playback stream
+            None,                    // Use the default device
+            "tone",                  // Stream description
+            &spec,                   // Sample format
+            None,                    // Use default channel map
+            None                     // Use default buffering attributes
+        )?;
 
+        // Generate and write samples
+        let mut buffer = Vec::with_capacity((total_samples as usize) * 2);
         for _ in 0..total_samples {
             let value = osc.next_sample(self.shape);
             let sample = (value * self.volume * i16::MAX as f32) as i16;
-            stdin.write_all(&sample.to_le_bytes())?;
+            buffer.extend_from_slice(&sample.to_le_bytes());
         }
 
-        drop(stdin);
-        pacat.wait()?;
+        s.write(&buffer)?;
+        s.drain()?;
 
         Ok(())
     }
