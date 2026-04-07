@@ -10,34 +10,33 @@ cargo build --release
 
 ## Running
 
-Generate a 440 Hz sine wave for 2 seconds at 50% volume:
+The synthesizer now runs in an interactive TUI (Text User Interface) where you can:
+- Adjust frequency (20-20000 Hz)
+- Adjust volume (0-100%)
+- Select waveform (sine, square, triangle, sawtooth)
+- Press and hold the Play button to produce sound
 
 ```bash
-cargo run -- -f 440 -d 2 -v 0.5
+cargo run --release
 ```
 
-### Interactive Mode
+### Using a Specific Audio Backend
+
+By default, the synthesizer tries cpal first, then falls back to PulseAudio if needed:
 
 ```bash
-cargo run -- -i
+cargo run -- --backend cpal      # Use cpal only
+cargo run -- --backend pulse     # Use PulseAudio only
 ```
 
-You'll be prompted to choose waveform shape (sine/square/triangle/sawtooth), frequency, volume, and duration.
+**Note on Termux**: cpal panics on Termux due to lack of Android NDK context initialization. Use `--backend pulse` for immediate audio playback, or omit the flag to auto-fallback.
 
-### Real-time Mode
+### Verbose Mode
 
-```bash
-cargo run -- --realtime
-```
-
-Press and hold **SPACEBAR** to continuously play the synthesizer. Release to stop. Press **Ctrl+C** to exit.
+Show backend detection details for debugging:
 
 ```bash
-# Play a 440 Hz sine wave in realtime with PulseAudio
-cargo run -- --realtime --backend pulse
-
-# Play a 523 Hz square wave in realtime
-cargo run -- -f 523 -s square --realtime
+cargo run -- --verbose
 ```
 
 ### Audio Backend
@@ -50,23 +49,6 @@ Syntherklaas supports two audio backends:
 **PulseAudio** (fallback)
 - Uses pacat (PulseAudio client) for low-latency streaming
 - Automatically used as fallback if cpal fails or panics
-
-#### Selecting a Backend
-
-By default, cpal is tried first, then falls back to PulseAudio if cpal fails:
-
-```bash
-cargo run -- -f 440 -d 2  # Uses cpal if available, falls back to PulseAudio
-```
-
-Force a specific backend without fallback:
-
-```bash
-cargo run -- -f 440 -d 2 --backend cpal      # Use cpal only
-cargo run -- -f 440 -d 2 --backend pulse     # Use PulseAudio only
-```
-
-**Note on Termux**: cpal panics on Termux due to lack of Android NDK context initialization. Use `--backend pulse` for immediate audio playback, or omit the flag to auto-fallback.
 
 #### Audio Format
 

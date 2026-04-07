@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 pub struct KeyboardHandler {
     spacebar_pressed: Arc<AtomicBool>,
     should_exit: Arc<AtomicBool>,
@@ -16,6 +17,7 @@ pub struct KeyboardHandler {
 }
 
 impl KeyboardHandler {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         KeyboardHandler {
             spacebar_pressed: Arc::new(AtomicBool::new(false)),
@@ -24,14 +26,17 @@ impl KeyboardHandler {
         }
     }
 
+    #[allow(dead_code)]
     pub fn spacebar_pressed(&self) -> Arc<AtomicBool> {
         Arc::clone(&self.spacebar_pressed)
     }
 
+    #[allow(dead_code)]
     pub fn should_exit(&self) -> Arc<AtomicBool> {
         Arc::clone(&self.should_exit)
     }
 
+    #[allow(dead_code)]
     pub fn start(&mut self) -> io::Result<()> {
         enable_raw_mode()?;
         let mut stdout = io::stdout();
@@ -92,6 +97,7 @@ impl KeyboardHandler {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn wait_and_cleanup(&mut self) -> io::Result<()> {
         if let Some(handle) = self.keyboard_thread.take() {
             let _ = handle.join();

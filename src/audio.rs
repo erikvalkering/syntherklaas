@@ -13,6 +13,7 @@ pub struct AudioPlayer {
     pub frequency: f32,
     pub volume: f32,
     pub shape: WaveShape,
+    #[allow(dead_code)]
     pub duration: f32,
     pub backend: Option<AudioBackend>,
     pub verbose: bool,
@@ -40,6 +41,7 @@ impl AudioPlayer {
         self
     }
 
+    #[allow(dead_code)]
     pub fn play(&self) -> Result<(), Box<dyn std::error::Error>> {
         match self.backend {
             Some(AudioBackend::Cpal) => self.play_cpal(),
@@ -178,6 +180,7 @@ impl AudioPlayer {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn play_cpal(&self) -> Result<(), Box<dyn std::error::Error>> {
         use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -225,6 +228,7 @@ impl AudioPlayer {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn play_pulseaudio(&self) -> Result<(), Box<dyn std::error::Error>> {
         use libpulse_simple_binding::Simple;
         use libpulse_binding::stream::Direction;

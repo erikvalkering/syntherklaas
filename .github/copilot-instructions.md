@@ -8,27 +8,30 @@ cargo build --release
 ```
 
 ### Running
-All commands use `cargo run --`:
+All commands use `cargo run`:
 
-**Basic tone generation** (440 Hz sine wave, 2 seconds, 50% volume):
+**Launch TUI (default)**:
 ```bash
-cargo run -- -f 440 -d 2 -v 0.5
+cargo run -- --backend pulse
 ```
 
-**Interactive mode** (prompts for waveform, frequency, volume, duration):
+**With specific audio backend**:
 ```bash
-cargo run -- -i
+cargo run -- --backend cpal      # Use cpal only
+cargo run -- --backend pulse     # Use PulseAudio only
 ```
 
-**Real-time mode** (hold SPACEBAR to play, Ctrl+C to exit):
+**Verbose mode** (show backend selection details):
 ```bash
-cargo run -- --realtime
+cargo run -- --verbose
 ```
 
-**Verbose output** (show backend detection details):
-```bash
-cargo run -- --realtime --verbose
-```
+**TUI Controls:**
+- Tab - Switch between fields
+- ↑/↓ - Adjust frequency or volume
+- ←/→ - Change waveform
+- Space/Enter - Press and hold play button (or use mouse to click)
+- q/Esc - Quit
 
 **Testing**
 No automated tests exist. Manual testing involves running the application with various parameters and verifying audio output.
@@ -57,10 +60,12 @@ Syntherklaas is a CLI synthesizer with four main modules:
 - Uses atomic booleans to signal audio thread state changes
 - Manages alternate screen and raw mode setup/teardown
 
-**4. CLI Entry Point** (`src/main.rs`)
-- Uses `clap` (derive API) to parse command-line arguments
-- Routes to interactive, real-time, or standard modes
-- Validates parameters (frequency range 20-20000 Hz, volume 0.0-1.0)
+**4. TUI / UI Layer** (`src/tui.rs`)
+- Uses ratatui for terminal UI framework
+- Displays editable fields for frequency, volume, and waveform selection
+- Play button with press-and-hold behavior (like spacebar)
+- Tab navigation between fields, arrow keys for value adjustment
+- Runs audio in background thread with shared `Arc<AtomicBool>` for playback state
 
 ## Key Conventions
 

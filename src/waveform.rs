@@ -9,6 +9,7 @@ pub enum WaveShape {
 }
 
 impl WaveShape {
+    #[allow(dead_code)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "sine" => Some(WaveShape::Sine),
