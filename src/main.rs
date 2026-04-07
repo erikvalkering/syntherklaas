@@ -43,6 +43,10 @@ struct Args {
     /// Audio backend: cpal or pulse (default: auto-fallback from cpal to pulse)
     #[arg(long)]
     backend: Option<String>,
+
+    /// Show verbose output (backend selection, etc.)
+    #[arg(long)]
+    verbose: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -67,7 +71,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Volume must be between 0.0 and 1.0".into());
     }
 
-    let mut player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
+    let mut player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration)
+        .with_verbose(args.verbose);
 
     if let Some(backend_str) = args.backend {
         let backend = match backend_str.to_lowercase().as_str() {
@@ -108,12 +113,22 @@ fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Err
     let shape = player.shape;
     let duration = player.duration;
     let backend = player.backend;
+    let verbose = player.verbose;
 
     let spacebar_audio = Arc::clone(&spacebar);
     let exit_audio = Arc::clone(&should_exit);
 
     let audio_thread = thread::spawn(move || {
-        let player = AudioPlayer::new(frequency, volume, shape, duration);
+        // Set up panic hook to suppress output unless verbose
+        let verbose_flag = verbose;
+        if !verbose_flag {
+            std::panic::set_hook(Box::new(|_| {
+                // Suppress panic output in non-verbose mode
+            }));
+        }
+
+        let player = AudioPlayer::new(frequency, volume, shape, duration)
+            .with_verbose(verbose);
         let player = if let Some(b) = backend {
             player.with_backend(b)
         } else {
@@ -133,7 +148,9 @@ fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Err
             })) {
                 Ok(Ok(())) => Ok(()),
                 Ok(Err(_)) | Err(_) => {
-                    eprintln!("Switching to PulseAudio...");
+                    if player.verbose {
+                        eprintln!("Switching to PulseAudio...");
+                    }
                     player.play_realtime_pulseaudio(spacebar_audio, exit_audio)
                 }
             }
@@ -198,5 +215,6 @@ fn get_interactive_input() -> Result<Args, Box<dyn std::error::Error>> {
         interactive: false,
         realtime: false,
         backend: None,
+        verbose: false,
     })
 }

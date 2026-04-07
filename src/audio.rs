@@ -15,6 +15,7 @@ pub struct AudioPlayer {
     pub shape: WaveShape,
     pub duration: f32,
     pub backend: Option<AudioBackend>,
+    pub verbose: bool,
 }
 
 impl AudioPlayer {
@@ -25,11 +26,17 @@ impl AudioPlayer {
             shape,
             duration,
             backend: None,
+            verbose: false,
         }
     }
 
     pub fn with_backend(mut self, backend: AudioBackend) -> Self {
         self.backend = Some(backend);
+        self
+    }
+
+    pub fn with_verbose(mut self, verbose: bool) -> Self {
+        self.verbose = verbose;
         self
     }
 
@@ -39,19 +46,33 @@ impl AudioPlayer {
             Some(AudioBackend::PulseAudio) => self.play_pulseaudio(),
             None => {
                 use std::panic;
-                match panic::catch_unwind(panic::AssertUnwindSafe(|| self.play_cpal())) {
+                
+                // Suppress panic output unless verbose
+                if !self.verbose {
+                    std::panic::set_hook(Box::new(|_| {}));
+                }
+                
+                let result = match panic::catch_unwind(panic::AssertUnwindSafe(|| self.play_cpal())) {
                     Ok(Ok(())) => Ok(()),
                     Ok(Err(cpal_err)) => {
-                        eprintln!("cpal unavailable: {}", cpal_err);
-                        eprintln!("Falling back to PulseAudio...");
+                        if self.verbose {
+                            eprintln!("cpal unavailable: {}", cpal_err);
+                            eprintln!("Falling back to PulseAudio...");
+                        }
                         self.play_pulseaudio()
                     }
                     Err(_) => {
-                        eprintln!("cpal panicked");
-                        eprintln!("Falling back to PulseAudio...");
+                        if self.verbose {
+                            eprintln!("cpal panicked");
+                            eprintln!("Falling back to PulseAudio...");
+                        }
                         self.play_pulseaudio()
                     }
-                }
+                };
+                
+                // Restore default panic hook
+                let _ = std::panic::take_hook();
+                result
             }
         }
     }

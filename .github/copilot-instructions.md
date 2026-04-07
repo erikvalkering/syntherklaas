@@ -25,6 +25,11 @@ cargo run -- -i
 cargo run -- --realtime
 ```
 
+**Verbose output** (show backend detection details):
+```bash
+cargo run -- --realtime --verbose
+```
+
 **Testing**
 No automated tests exist. Manual testing involves running the application with various parameters and verifying audio output.
 
@@ -97,6 +102,11 @@ Syntherklaas is a CLI synthesizer with four main modules:
 - **Issue**: On Termux, key release events aren't reliably reported, so holding spacebar would continue playing even after physically releasing the key
 - **Root cause**: Crossterm depends on OS-level key event reporting; Termux doesn't always report `KeyEventKind::Release` events
 - **Fix**: Implemented timeout-based release detection in `KeyboardHandler`: if no new press event arrives within 100ms, assume the key was released. This maintains responsiveness while working around the Termux limitation.
+
+**Verbose auto-detection (FIXED)**
+- **Issue**: Backend auto-detection was overly verbose with panic stack traces and fallback messages cluttering output
+- **Root cause**: `AudioPlayer` unconditionally printed fallback messages when cpal failed and it switched to PulseAudio. Additionally, Rust's panic hook prints panic details to stderr even when caught by `catch_unwind`.
+- **Fix**: Added `--verbose` flag to control backend detection output. By default, auto-detection silently picks a working backend. When verbose is off, a custom panic hook suppresses panic output. With `--verbose`, it shows all backend selection details including panic traces, useful for debugging setup issues.
 
 ## MCP Servers
 
