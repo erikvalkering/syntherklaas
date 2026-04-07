@@ -15,14 +15,14 @@ use ratatui::{
 };
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
 pub struct AppState {
-    frequency: f32,
-    volume: f32,
-    shape: WaveShape,
+    frequency: Arc<Mutex<f32>>,
+    volume: Arc<Mutex<f32>>,
+    shape: Arc<Mutex<WaveShape>>,
     playing: Arc<AtomicBool>,
     should_exit_tui: bool,
     should_exit_audio: Arc<AtomicBool>,
@@ -44,9 +44,9 @@ enum FocusedField {
 impl AppState {
     fn new(backend: Option<AudioBackend>, verbose: bool) -> Self {
         AppState {
-            frequency: 440.0,
-            volume: 0.5,
-            shape: WaveShape::Sine,
+            frequency: Arc::new(Mutex::new(440.0)),
+            volume: Arc::new(Mutex::new(0.5)),
+            shape: Arc::new(Mutex::new(WaveShape::Sine)),
             playing: Arc::new(AtomicBool::new(false)),
             should_exit_tui: false,
             should_exit_audio: Arc::new(AtomicBool::new(false)),
@@ -59,9 +59,9 @@ impl AppState {
     }
 
     fn start_audio_thread(&mut self) {
-        let frequency = self.frequency;
-        let volume = self.volume;
-        let shape = self.shape;
+        let frequency = Arc::clone(&self.frequency);
+        let volume = Arc::clone(&self.volume);
+        let shape = Arc::clone(&self.shape);
         let backend = self.backend;
         let verbose = self.verbose;
         let playing = Arc::clone(&self.playing);
@@ -73,7 +73,11 @@ impl AppState {
                 std::panic::set_hook(Box::new(|_| {}));
             }
 
-            let player = AudioPlayer::new(frequency, volume, shape, 999.0)
+            let init_freq = *frequency.lock().unwrap();
+            let init_vol = *volume.lock().unwrap();
+            let init_shape = *shape.lock().unwrap();
+
+            let player = AudioPlayer::new(init_freq, init_vol, init_shape, 999.0)
                 .with_verbose(verbose);
             let player = if let Some(b) = backend {
                 player.with_backend(b)
@@ -84,19 +88,37 @@ impl AppState {
             // Try realtime playback with fallback
             use std::panic;
             let result = if let Some(AudioBackend::PulseAudio) = backend {
-                player.play_realtime_pulseaudio(Arc::clone(&playing), Arc::clone(&should_exit))
+                player.play_realtime_pulseaudio(
+                    Arc::clone(&playing),
+                    Arc::clone(&should_exit),
+                    Some(Arc::clone(&frequency)),
+                    Some(Arc::clone(&volume)),
+                    Some(Arc::clone(&shape)),
+                )
             } else if let Some(AudioBackend::Cpal) = backend {
-                player.play_realtime_cpal(Arc::clone(&playing), Arc::clone(&should_exit))
+                player.play_realtime_cpal(
+                    Arc::clone(&playing),
+                    Arc::clone(&should_exit),
+                    Some(Arc::clone(&frequency)),
+                    Some(Arc::clone(&volume)),
+                    Some(Arc::clone(&shape)),
+                )
             } else {
                 match panic::catch_unwind(panic::AssertUnwindSafe(|| {
-                    player.play_realtime_cpal(Arc::clone(&playing), Arc::clone(&should_exit))
+                    player.play_realtime_cpal(
+                        Arc::clone(&playing),
+                        Arc::clone(&should_exit),
+                        Some(Arc::clone(&frequency)),
+                        Some(Arc::clone(&volume)),
+                        Some(Arc::clone(&shape)),
+                    )
                 })) {
                     Ok(Ok(())) => Ok(()),
                     Ok(Err(_)) | Err(_) => {
                         if verbose {
                             eprintln!("Switching to PulseAudio...");
                         }
-                        player.play_realtime_pulseaudio(playing, should_exit)
+                        player.play_realtime_pulseaudio(playing, should_exit, Some(frequency), Some(volume), Some(shape))
                     }
                 }
             };
@@ -122,10 +144,12 @@ impl AppState {
             KeyCode::Up => {
                 match self.focused_field {
                     FocusedField::Frequency => {
-                        self.frequency = (self.frequency + 10.0).min(20000.0);
+                        let mut freq = self.frequency.lock().unwrap();
+                        *freq = (*freq + 10.0).min(20000.0);
                     }
                     FocusedField::Volume => {
-                        self.volume = (self.volume + 0.05).min(1.0);
+                        let mut vol = self.volume.lock().unwrap();
+                        *vol = (*vol + 0.05).min(1.0);
                     }
                     _ => {}
                 }
@@ -133,10 +157,12 @@ impl AppState {
             KeyCode::Down => {
                 match self.focused_field {
                     FocusedField::Frequency => {
-                        self.frequency = (self.frequency - 10.0).max(20.0);
+                        let mut freq = self.frequency.lock().unwrap();
+                        *freq = (*freq - 10.0).max(20.0);
                     }
                     FocusedField::Volume => {
-                        self.volume = (self.volume - 0.05).max(0.0);
+                        let mut vol = self.volume.lock().unwrap();
+                        *vol = (*vol - 0.05).max(0.0);
                     }
                     _ => {}
                 }
@@ -144,7 +170,8 @@ impl AppState {
             KeyCode::Left | KeyCode::Char('a') => {
                 match self.focused_field {
                     FocusedField::Shape => {
-                        self.shape = match self.shape {
+                        let mut shape = self.shape.lock().unwrap();
+                        *shape = match *shape {
                             WaveShape::Sine => WaveShape::Sawtooth,
                             WaveShape::Square => WaveShape::Sine,
                             WaveShape::Triangle => WaveShape::Square,
@@ -157,7 +184,8 @@ impl AppState {
             KeyCode::Right | KeyCode::Char('d') => {
                 match self.focused_field {
                     FocusedField::Shape => {
-                        self.shape = match self.shape {
+                        let mut shape = self.shape.lock().unwrap();
+                        *shape = match *shape {
                             WaveShape::Sine => WaveShape::Square,
                             WaveShape::Square => WaveShape::Triangle,
                             WaveShape::Triangle => WaveShape::Sawtooth,
@@ -255,6 +283,10 @@ fn run_app(
 }
 
 fn ui(f: &mut Frame, app: &AppState) {
+    let frequency = *app.frequency.lock().unwrap();
+    let volume = *app.volume.lock().unwrap();
+    let shape = *app.shape.lock().unwrap();
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -277,7 +309,7 @@ fn ui(f: &mut Frame, app: &AppState) {
         .title("Frequency (Hz) - Up/Down to adjust")
         .borders(Borders::ALL)
         .style(freq_style);
-    let freq_text = format!("{:.0}", app.frequency);
+    let freq_text = format!("{:.0}", frequency);
     let freq_para = Paragraph::new(freq_text)
         .block(freq_block)
         .alignment(Alignment::Center);
@@ -295,8 +327,8 @@ fn ui(f: &mut Frame, app: &AppState) {
         .style(vol_style);
     let vol_gauge = Gauge::default()
         .block(vol_block)
-        .ratio(app.volume as f64)
-        .label(format!("{:.0}%", app.volume * 100.0))
+        .ratio(volume as f64)
+        .label(format!("{:.0}%", volume * 100.0))
         .style(Style::default().fg(Color::Green));
     f.render_widget(vol_gauge, chunks[1]);
 
@@ -310,7 +342,7 @@ fn ui(f: &mut Frame, app: &AppState) {
         .title("Waveform - Left/Right to change")
         .borders(Borders::ALL)
         .style(shape_style);
-    let shape_text = match app.shape {
+    let shape_text = match shape {
         WaveShape::Sine => "Sine",
         WaveShape::Square => "Square",
         WaveShape::Triangle => "Triangle",
