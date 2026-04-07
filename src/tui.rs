@@ -1,18 +1,19 @@
 use crate::audio::{AudioPlayer, AudioBackend};
 use crate::waveform::WaveShape;
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent},
+    event::{self, Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind, EnableMouseCapture, DisableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
     widgets::{Block, Borders, Paragraph, Gauge},
     Frame, Terminal,
 };
+use std::cell::Cell;
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -31,6 +32,13 @@ pub struct AppState {
     verbose: bool,
     audio_thread: Option<std::thread::JoinHandle<()>>,
     last_play_button_press: Instant,
+    // Mouse interaction tracking
+    mouse_dragging: bool,
+    mouse_start_x: u16,
+    freq_chunk_rect: Cell<Rect>,
+    vol_chunk_rect: Cell<Rect>,
+    shape_chunk_rect: Cell<Rect>,
+    play_chunk_rect: Cell<Rect>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -55,6 +63,12 @@ impl AppState {
             verbose,
             audio_thread: None,
             last_play_button_press: Instant::now(),
+            mouse_dragging: false,
+            mouse_start_x: 0,
+            freq_chunk_rect: Cell::new(Rect::default()),
+            vol_chunk_rect: Cell::new(Rect::default()),
+            shape_chunk_rect: Cell::new(Rect::default()),
+            play_chunk_rect: Cell::new(Rect::default()),
         }
     }
 
@@ -227,12 +241,114 @@ impl AppState {
             self.playing.store(false, Ordering::Relaxed);
         }
     }
+
+    fn is_in_rect(rect: Rect, x: u16, y: u16) -> bool {
+        x >= rect.left() && x < rect.right() && y >= rect.top() && y < rect.bottom()
+    }
+
+    fn handle_mouse_event(&mut self, mouse: MouseEvent) {
+        match mouse.kind {
+            MouseEventKind::Down(_) => {
+                self.mouse_dragging = true;
+                self.mouse_start_x = mouse.column;
+
+                // Check if clicked on frequency field
+                if Self::is_in_rect(self.freq_chunk_rect.get(), mouse.column, mouse.row) {
+                    self.focused_field = FocusedField::Frequency;
+                }
+                // Check if clicked on volume field
+                else if Self::is_in_rect(self.vol_chunk_rect.get(), mouse.column, mouse.row) {
+                    self.focused_field = FocusedField::Volume;
+                }
+                // Check if clicked on shape field
+                else if Self::is_in_rect(self.shape_chunk_rect.get(), mouse.column, mouse.row) {
+                    self.focused_field = FocusedField::Shape;
+                }
+                // Check if clicked on play button
+                else if Self::is_in_rect(self.play_chunk_rect.get(), mouse.column, mouse.row) {
+                    self.focused_field = FocusedField::PlayButton;
+                    self.playing.store(true, Ordering::Relaxed);
+                    self.last_play_button_press = Instant::now();
+                }
+            }
+            MouseEventKind::Up(_) => {
+                self.mouse_dragging = false;
+            }
+            MouseEventKind::Drag(_) => {
+                if !self.mouse_dragging {
+                    return;
+                }
+
+                let delta = mouse.column as i16 - self.mouse_start_x as i16;
+                self.mouse_start_x = mouse.column;
+
+                match self.focused_field {
+                    FocusedField::Frequency => {
+                        let mut freq = self.frequency.lock().unwrap();
+                        *freq = (*freq + (delta as f32 * 10.0)).max(20.0).min(20000.0);
+                    }
+                    FocusedField::Volume => {
+                        let mut vol = self.volume.lock().unwrap();
+                        *vol = (*vol + (delta as f32 * 0.01)).max(0.0).min(1.0);
+                    }
+                    FocusedField::Shape => {
+                        // Horizontal drag cycles through shapes
+                        if delta > 0 {
+                            let mut shape = self.shape.lock().unwrap();
+                            *shape = match *shape {
+                                WaveShape::Sine => WaveShape::Square,
+                                WaveShape::Square => WaveShape::Triangle,
+                                WaveShape::Triangle => WaveShape::Sawtooth,
+                                WaveShape::Sawtooth => WaveShape::Sine,
+                            };
+                        } else if delta < 0 {
+                            let mut shape = self.shape.lock().unwrap();
+                            *shape = match *shape {
+                                WaveShape::Sine => WaveShape::Sawtooth,
+                                WaveShape::Square => WaveShape::Sine,
+                                WaveShape::Triangle => WaveShape::Square,
+                                WaveShape::Sawtooth => WaveShape::Triangle,
+                            };
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            MouseEventKind::ScrollUp => {
+                match self.focused_field {
+                    FocusedField::Frequency => {
+                        let mut freq = self.frequency.lock().unwrap();
+                        *freq = (*freq + 10.0).min(20000.0);
+                    }
+                    FocusedField::Volume => {
+                        let mut vol = self.volume.lock().unwrap();
+                        *vol = (*vol + 0.05).min(1.0);
+                    }
+                    _ => {}
+                }
+            }
+            MouseEventKind::ScrollDown => {
+                match self.focused_field {
+                    FocusedField::Frequency => {
+                        let mut freq = self.frequency.lock().unwrap();
+                        *freq = (*freq - 10.0).max(20.0);
+                    }
+                    FocusedField::Volume => {
+                        let mut vol = self.volume.lock().unwrap();
+                        *vol = (*vol - 0.05).max(0.0);
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 pub fn run_tui(audio_backend: Option<AudioBackend>, verbose: bool) -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
@@ -243,7 +359,7 @@ pub fn run_tui(audio_backend: Option<AudioBackend>, verbose: bool) -> Result<(),
     let result = run_app(terminal, &mut app);
 
     disable_raw_mode()?;
-    execute!(io::stdout(), LeaveAlternateScreen)?;
+    execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
 
     app.playing.store(false, Ordering::Relaxed);
     app.should_exit_audio.store(true, Ordering::Relaxed);
@@ -262,12 +378,18 @@ fn run_app(
         terminal.draw(|f| ui(f, app))?;
 
         if crossterm::event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == event::KeyEventKind::Press {
-                    app.handle_key_event(key);
-                } else if key.kind == event::KeyEventKind::Release {
-                    app.handle_key_release(key);
+            match event::read()? {
+                Event::Key(key) => {
+                    if key.kind == event::KeyEventKind::Press {
+                        app.handle_key_event(key);
+                    } else if key.kind == event::KeyEventKind::Release {
+                        app.handle_key_release(key);
+                    }
                 }
+                Event::Mouse(mouse) => {
+                    app.handle_mouse_event(mouse);
+                }
+                _ => {}
             }
         }
 
@@ -299,6 +421,12 @@ fn ui(f: &mut Frame, app: &AppState) {
         ])
         .split(f.size());
 
+    // Store chunk rectangles for mouse interaction
+    app.freq_chunk_rect.set(chunks[0]);
+    app.vol_chunk_rect.set(chunks[1]);
+    app.shape_chunk_rect.set(chunks[2]);
+    app.play_chunk_rect.set(chunks[3]);
+
     // Frequency field
     let freq_style = if app.focused_field == FocusedField::Frequency {
         Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
@@ -306,7 +434,7 @@ fn ui(f: &mut Frame, app: &AppState) {
         Style::default()
     };
     let freq_block = Block::default()
-        .title("Frequency (Hz) - Up/Down to adjust")
+        .title("Frequency (Hz) - Up/Down to adjust, drag to change")
         .borders(Borders::ALL)
         .style(freq_style);
     let freq_text = format!("{:.0}", frequency);
@@ -322,7 +450,7 @@ fn ui(f: &mut Frame, app: &AppState) {
         Style::default()
     };
     let vol_block = Block::default()
-        .title("Volume - Up/Down to adjust")
+        .title("Volume - Up/Down or scroll to adjust, drag to change")
         .borders(Borders::ALL)
         .style(vol_style);
     let vol_gauge = Gauge::default()
@@ -339,7 +467,7 @@ fn ui(f: &mut Frame, app: &AppState) {
         Style::default()
     };
     let shape_block = Block::default()
-        .title("Waveform - Left/Right to change")
+        .title("Waveform - Left/Right or drag to change")
         .borders(Borders::ALL)
         .style(shape_style);
     let shape_text = match shape {
@@ -360,9 +488,9 @@ fn ui(f: &mut Frame, app: &AppState) {
         Style::default()
     };
     let play_status = if app.playing.load(Ordering::Relaxed) {
-        "PLAYING (Press Space/Enter to release)"
+        "PLAYING (Click or press Space/Enter to release)"
     } else {
-        "PRESS SPACE TO PLAY"
+        "CLICK TO PLAY (or press Space)"
     };
     let play_block = Block::default()
         .title("Play Button")
