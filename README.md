@@ -24,6 +24,22 @@ cargo run -- -i
 
 You'll be prompted to choose waveform shape (sine/square/triangle/sawtooth), frequency, volume, and duration.
 
+### Real-time Mode
+
+```bash
+cargo run -- --realtime
+```
+
+Press and hold **SPACEBAR** to continuously play the synthesizer. Release to stop. Press **Ctrl+C** to exit.
+
+```bash
+# Play a 440 Hz sine wave in realtime with PulseAudio
+cargo run -- --realtime --backend pulse
+
+# Play a 523 Hz square wave in realtime
+cargo run -- -f 523 -s square --realtime
+```
+
 ### Audio Backend
 
 Syntherklaas supports two audio backends:

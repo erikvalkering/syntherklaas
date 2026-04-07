@@ -1,10 +1,16 @@
 mod waveform;
 mod audio;
+mod keyboard;
 
 use clap::Parser;
 use waveform::WaveShape;
 use audio::{AudioPlayer, AudioBackend};
+use keyboard::KeyboardHandler;
 use std::io::{self, Write};
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 #[derive(Parser, Debug)]
 #[command(name = "syntherklaas")]
@@ -30,6 +36,10 @@ struct Args {
     #[arg(short, long)]
     interactive: bool,
 
+    /// Realtime mode (hold spacebar to play, Ctrl+C to exit)
+    #[arg(long)]
+    realtime: bool,
+
     /// Audio backend: cpal or pulse (default: auto-fallback from cpal to pulse)
     #[arg(long)]
     backend: Option<String>,
@@ -37,6 +47,10 @@ struct Args {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = Args::parse();
+
+    if args.interactive && args.realtime {
+        return Err("Cannot use both -i and --realtime flags".into());
+    }
 
     if args.interactive {
         args = get_interactive_input()?;
@@ -53,11 +67,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Volume must be between 0.0 and 1.0".into());
     }
 
-    eprintln!(
-        "Playing {} Hz {} wave at {:.0}% volume for {:.1} seconds...",
-        args.frequency, args.shape, args.volume * 100.0, args.duration
-    );
-
     let mut player = AudioPlayer::new(args.frequency, args.volume, shape, args.duration);
 
     if let Some(backend_str) = args.backend {
@@ -69,9 +78,80 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         player = player.with_backend(backend);
     }
 
-    player.play()?;
+    if args.realtime {
+        run_realtime_mode(&player)?;
+    } else {
+        eprintln!(
+            "Playing {} Hz {} wave at {:.0}% volume for {:.1} seconds...",
+            args.frequency, args.shape, args.volume * 100.0, args.duration
+        );
+        player.play()?;
+        eprintln!("Done!");
+    }
 
-    eprintln!("Done!");
+    Ok(())
+}
+
+fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Error>> {
+    let kb = KeyboardHandler::new();
+    kb.start()?;
+
+    let spacebar = kb.spacebar_pressed();
+    let should_exit = kb.should_exit();
+
+    // Give keyboard handler time to initialize
+    thread::sleep(Duration::from_millis(100));
+
+    // Spawn audio thread
+    let frequency = player.frequency;
+    let volume = player.volume;
+    let shape = player.shape;
+    let duration = player.duration;
+    let backend = player.backend;
+
+    let spacebar_audio = Arc::clone(&spacebar);
+
+    let audio_thread = thread::spawn(move || {
+        let player = AudioPlayer::new(frequency, volume, shape, duration);
+        let player = if let Some(b) = backend {
+            player.with_backend(b)
+        } else {
+            player
+        };
+
+        // Try realtime playback with fallback
+        let result = if let Some(AudioBackend::PulseAudio) = backend {
+            player.play_realtime_pulseaudio(spacebar_audio.clone())
+        } else if let Some(AudioBackend::Cpal) = backend {
+            player.play_realtime_cpal(spacebar_audio.clone())
+        } else {
+            // Auto-detect: try cpal first
+            use std::panic;
+            match panic::catch_unwind(panic::AssertUnwindSafe(|| {
+                player.play_realtime_cpal(spacebar_audio.clone())
+            })) {
+                Ok(Ok(())) => Ok(()),
+                Ok(Err(_)) | Err(_) => {
+                    eprintln!("Switching to PulseAudio...");
+                    player.play_realtime_pulseaudio(spacebar_audio)
+                }
+            }
+        };
+
+        if let Err(e) = result {
+            eprintln!("Audio error: {}", e);
+        }
+    });
+
+    // Wait for exit signal
+    while !should_exit.load(Ordering::Relaxed) {
+        thread::sleep(Duration::from_millis(100));
+    }
+
+    eprintln!("\nExiting...");
+    let _ = kb.cleanup();
+    let _ = audio_thread.join();
+
     Ok(())
 }
 
@@ -115,6 +195,7 @@ fn get_interactive_input() -> Result<Args, Box<dyn std::error::Error>> {
         volume: volume.trim().parse()?,
         duration: duration.trim().parse()?,
         interactive: false,
+        realtime: false,
         backend: None,
     })
 }

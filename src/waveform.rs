@@ -21,9 +21,9 @@ impl WaveShape {
 }
 
 pub struct Oscillator {
-    sample_rate: f32,
-    frequency: f32,
-    phase: f32,
+    pub sample_rate: f32,
+    pub frequency: f32,
+    pub phase: f32,
 }
 
 impl Oscillator {
