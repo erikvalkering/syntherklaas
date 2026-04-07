@@ -24,7 +24,8 @@ pub struct AppState {
     volume: f32,
     shape: WaveShape,
     playing: Arc<AtomicBool>,
-    should_exit: bool,
+    should_exit_tui: bool,
+    should_exit_audio: Arc<AtomicBool>,
     focused_field: FocusedField,
     backend: Option<AudioBackend>,
     verbose: bool,
@@ -46,7 +47,8 @@ impl AppState {
             volume: 0.5,
             shape: WaveShape::Sine,
             playing: Arc::new(AtomicBool::new(false)),
-            should_exit: false,
+            should_exit_tui: false,
+            should_exit_audio: Arc::new(AtomicBool::new(false)),
             focused_field: FocusedField::Frequency,
             backend,
             verbose,
@@ -61,6 +63,7 @@ impl AppState {
         let backend = self.backend;
         let verbose = self.verbose;
         let playing = Arc::clone(&self.playing);
+        let should_exit = Arc::clone(&self.should_exit_audio);
 
         let audio_thread = thread::spawn(move || {
             // Set up panic hook to suppress output unless verbose
@@ -78,7 +81,6 @@ impl AppState {
 
             // Try realtime playback with fallback
             use std::panic;
-            let should_exit = Arc::new(AtomicBool::new(false));
             let result = if let Some(AudioBackend::PulseAudio) = backend {
                 player.play_realtime_pulseaudio(Arc::clone(&playing), Arc::clone(&should_exit))
             } else if let Some(AudioBackend::Cpal) = backend {
@@ -170,7 +172,8 @@ impl AppState {
             }
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.playing.store(false, Ordering::Relaxed);
-                self.should_exit = true;
+                self.should_exit_audio.store(true, Ordering::Relaxed);
+                self.should_exit_tui = true;
             }
             _ => {}
         }
@@ -205,6 +208,7 @@ pub fn run_tui(audio_backend: Option<AudioBackend>, verbose: bool) -> Result<(),
     execute!(io::stdout(), LeaveAlternateScreen)?;
 
     app.playing.store(false, Ordering::Relaxed);
+    app.should_exit_audio.store(true, Ordering::Relaxed);
     if let Some(handle) = app.audio_thread {
         let _ = handle.join();
     }
@@ -229,7 +233,7 @@ fn run_app(
             }
         }
 
-        if app.should_exit {
+        if app.should_exit_tui {
             break;
         }
     }
