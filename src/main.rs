@@ -98,6 +98,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Real-time synthesizer mode");
+    println!("Press and hold SPACEBAR to play");
+    println!("Press Ctrl+C to exit\n");
+    
     let mut kb = KeyboardHandler::new();
     kb.start()?;
 

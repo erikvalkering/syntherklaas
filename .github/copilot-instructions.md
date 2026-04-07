@@ -108,6 +108,11 @@ Syntherklaas is a CLI synthesizer with four main modules:
 - **Root cause**: `AudioPlayer` unconditionally printed fallback messages when cpal failed and it switched to PulseAudio. Additionally, Rust's panic hook prints panic details to stderr even when caught by `catch_unwind`.
 - **Fix**: Added `--verbose` flag to control backend detection output. By default, auto-detection silently picks a working backend. When verbose is off, a custom panic hook suppresses panic output. With `--verbose`, it shows all backend selection details including panic traces, useful for debugging setup issues.
 
+**Text rendering (FIXED)**
+- **Issue**: Terminal output appeared diagonally when entering real-time mode
+- **Root cause**: Messages were printed to stderr AFTER enabling raw mode and alternate screen, causing rendering distortion
+- **Fix**: Print initialization messages to stderr BEFORE starting the keyboard handler, ensuring proper terminal rendering
+
 ## MCP Servers
 
 **Recommended MCP servers for this project:**

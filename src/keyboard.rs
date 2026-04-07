@@ -37,10 +37,6 @@ impl KeyboardHandler {
         let mut stdout = io::stdout();
         execute!(stdout, EnterAlternateScreen)?;
 
-        eprintln!("Real-time synthesizer mode");
-        eprintln!("Press and hold SPACEBAR to play");
-        eprintln!("Press Ctrl+C to exit\n");
-
         let spacebar = Arc::clone(&self.spacebar_pressed);
         let exit = Arc::clone(&self.should_exit);
 
