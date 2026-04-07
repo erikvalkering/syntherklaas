@@ -93,6 +93,11 @@ Syntherklaas is a CLI synthesizer with four main modules:
 - **Root cause**: Audio playback functions (`play_realtime_cpal`, `play_realtime_pulseaudio`) weren't receiving the `should_exit` signal, causing them to wait indefinitely for the spacebar state rather than checking for exit
 - **Fix**: Both realtime functions now accept both `should_play` (spacebar state) and `should_exit` (Ctrl+C signal) parameters, allowing clean shutdown when either backend is used
 
+**Spacebar release detection (FIXED)**
+- **Issue**: On Termux, key release events aren't reliably reported, so holding spacebar would continue playing even after physically releasing the key
+- **Root cause**: Crossterm depends on OS-level key event reporting; Termux doesn't always report `KeyEventKind::Release` events
+- **Fix**: Implemented timeout-based release detection in `KeyboardHandler`: if no new press event arrives within 100ms, assume the key was released. This maintains responsiveness while working around the Termux limitation.
+
 ## MCP Servers
 
 **Recommended MCP servers for this project:**

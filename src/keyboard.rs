@@ -7,7 +7,7 @@ use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub struct KeyboardHandler {
     spacebar_pressed: Arc<AtomicBool>,
@@ -46,15 +46,18 @@ impl KeyboardHandler {
 
         // Spawn a thread to handle keyboard input
         let handle = thread::spawn(move || {
+            let mut last_spacebar_press = Instant::now();
+            let key_repeat_interval = Duration::from_millis(100);
+
             loop {
                 if event::poll(Duration::from_millis(50)).unwrap_or(false) {
                     if let Ok(Event::Key(key_event)) = event::read() {
                         match key_event.code {
                             KeyCode::Char(' ') => {
-                                // Toggle on space press (since termux might not support release events)
                                 match key_event.kind {
                                     event::KeyEventKind::Press => {
                                         spacebar.store(true, Ordering::Relaxed);
+                                        last_spacebar_press = Instant::now();
                                     }
                                     event::KeyEventKind::Release => {
                                         spacebar.store(false, Ordering::Relaxed);
@@ -73,6 +76,11 @@ impl KeyboardHandler {
                             _ => {}
                         }
                     }
+                }
+
+                // Detect key release by timeout (for systems like Termux that don't send release events)
+                if spacebar.load(Ordering::Relaxed) && last_spacebar_press.elapsed() > key_repeat_interval {
+                    spacebar.store(false, Ordering::Relaxed);
                 }
 
                 if exit.load(Ordering::Relaxed) {
