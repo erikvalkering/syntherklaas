@@ -12,6 +12,7 @@ use std::time::Duration;
 pub struct KeyboardHandler {
     spacebar_pressed: Arc<AtomicBool>,
     should_exit: Arc<AtomicBool>,
+    keyboard_thread: Option<std::thread::JoinHandle<()>>,
 }
 
 impl KeyboardHandler {
@@ -19,6 +20,7 @@ impl KeyboardHandler {
         KeyboardHandler {
             spacebar_pressed: Arc::new(AtomicBool::new(false)),
             should_exit: Arc::new(AtomicBool::new(false)),
+            keyboard_thread: None,
         }
     }
 
@@ -30,7 +32,7 @@ impl KeyboardHandler {
         Arc::clone(&self.should_exit)
     }
 
-    pub fn start(&self) -> io::Result<()> {
+    pub fn start(&mut self) -> io::Result<()> {
         enable_raw_mode()?;
         let mut stdout = io::stdout();
         execute!(stdout, EnterAlternateScreen)?;
@@ -43,7 +45,7 @@ impl KeyboardHandler {
         let exit = Arc::clone(&self.should_exit);
 
         // Spawn a thread to handle keyboard input
-        thread::spawn(move || {
+        let handle = thread::spawn(move || {
             loop {
                 if event::poll(Duration::from_millis(50)).unwrap_or(false) {
                     if let Ok(Event::Key(key_event)) = event::read() {
@@ -81,10 +83,16 @@ impl KeyboardHandler {
             let _ = execute!(io::stdout(), LeaveAlternateScreen);
         });
 
+        self.keyboard_thread = Some(handle);
+
         Ok(())
     }
 
-    pub fn cleanup(&self) -> io::Result<()> {
+    pub fn wait_and_cleanup(&mut self) -> io::Result<()> {
+        if let Some(handle) = self.keyboard_thread.take() {
+            let _ = handle.join();
+        }
+        
         disable_raw_mode()?;
         execute!(io::stdout(), LeaveAlternateScreen)?;
         Ok(())

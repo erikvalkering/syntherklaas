@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Error>> {
-    let kb = KeyboardHandler::new();
+    let mut kb = KeyboardHandler::new();
     kb.start()?;
 
     let spacebar = kb.spacebar_pressed();
@@ -149,7 +149,7 @@ fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Err
     }
 
     eprintln!("\nExiting...");
-    let _ = kb.cleanup();
+    let _ = kb.wait_and_cleanup();
     let _ = audio_thread.join();
 
     Ok(())
