@@ -17,7 +17,7 @@ use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub struct AppState {
     frequency: f32,
@@ -30,6 +30,7 @@ pub struct AppState {
     backend: Option<AudioBackend>,
     verbose: bool,
     audio_thread: Option<std::thread::JoinHandle<()>>,
+    last_play_button_press: Instant,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -53,6 +54,7 @@ impl AppState {
             backend,
             verbose,
             audio_thread: None,
+            last_play_button_press: Instant::now(),
         }
     }
 
@@ -168,6 +170,7 @@ impl AppState {
             KeyCode::Char(' ') | KeyCode::Enter => {
                 if self.focused_field == FocusedField::PlayButton {
                     self.playing.store(true, Ordering::Relaxed);
+                    self.last_play_button_press = Instant::now();
                 }
             }
             KeyCode::Esc | KeyCode::Char('q') => {
@@ -187,6 +190,13 @@ impl AppState {
                 }
             }
             _ => {}
+        }
+    }
+
+    fn check_timeout_release(&mut self) {
+        // Detect key release by timeout (for systems like Termux that don't send release events)
+        if self.playing.load(Ordering::Relaxed) && self.last_play_button_press.elapsed() > Duration::from_millis(100) {
+            self.playing.store(false, Ordering::Relaxed);
         }
     }
 }
@@ -232,6 +242,9 @@ fn run_app(
                 }
             }
         }
+
+        // Detect key release by timeout (for systems like Termux)
+        app.check_timeout_release();
 
         if app.should_exit_tui {
             break;
