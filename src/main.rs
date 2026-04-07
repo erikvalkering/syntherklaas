@@ -110,6 +110,7 @@ fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Err
     let backend = player.backend;
 
     let spacebar_audio = Arc::clone(&spacebar);
+    let exit_audio = Arc::clone(&should_exit);
 
     let audio_thread = thread::spawn(move || {
         let player = AudioPlayer::new(frequency, volume, shape, duration);
@@ -121,19 +122,19 @@ fn run_realtime_mode(player: &AudioPlayer) -> Result<(), Box<dyn std::error::Err
 
         // Try realtime playback with fallback
         let result = if let Some(AudioBackend::PulseAudio) = backend {
-            player.play_realtime_pulseaudio(spacebar_audio.clone())
+            player.play_realtime_pulseaudio(spacebar_audio.clone(), exit_audio.clone())
         } else if let Some(AudioBackend::Cpal) = backend {
-            player.play_realtime_cpal(spacebar_audio.clone())
+            player.play_realtime_cpal(spacebar_audio.clone(), exit_audio.clone())
         } else {
             // Auto-detect: try cpal first
             use std::panic;
             match panic::catch_unwind(panic::AssertUnwindSafe(|| {
-                player.play_realtime_cpal(spacebar_audio.clone())
+                player.play_realtime_cpal(spacebar_audio.clone(), exit_audio.clone())
             })) {
                 Ok(Ok(())) => Ok(()),
                 Ok(Err(_)) | Err(_) => {
                     eprintln!("Switching to PulseAudio...");
-                    player.play_realtime_pulseaudio(spacebar_audio)
+                    player.play_realtime_pulseaudio(spacebar_audio, exit_audio)
                 }
             }
         };

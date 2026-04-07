@@ -56,7 +56,7 @@ impl AudioPlayer {
         }
     }
 
-    pub fn play_realtime_cpal(&self, should_play: Arc<AtomicBool>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn play_realtime_cpal(&self, should_play: Arc<AtomicBool>, should_exit: Arc<AtomicBool>) -> Result<(), Box<dyn std::error::Error>> {
         use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
         let host = cpal::default_host();
@@ -102,16 +102,15 @@ impl AudioPlayer {
 
         stream.play()?;
         
-        // Keep stream alive while should_play might change
-        while !should_play.load(Ordering::Relaxed) {
-            std::thread::sleep(Duration::from_millis(10));
+        // Keep stream alive until exit signal
+        while !should_exit.load(Ordering::Relaxed) {
+            std::thread::sleep(Duration::from_millis(50));
         }
-        std::thread::sleep(Duration::from_millis(100));
 
         Ok(())
     }
 
-    pub fn play_realtime_pulseaudio(&self, should_play: Arc<AtomicBool>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn play_realtime_pulseaudio(&self, should_play: Arc<AtomicBool>, should_exit: Arc<AtomicBool>) -> Result<(), Box<dyn std::error::Error>> {
         use libpulse_simple_binding::Simple;
         use libpulse_binding::stream::Direction;
         use libpulse_binding::sample::{Spec, Format};
@@ -139,14 +138,14 @@ impl AudioPlayer {
         let chunk_size = sample_rate as usize / 10; // 100ms chunks
         let mut buffer = vec![0i16; chunk_size];
 
-        while !should_play.load(Ordering::Relaxed) {
-            std::thread::sleep(Duration::from_millis(10));
-        }
-
-        while should_play.load(Ordering::Relaxed) {
+        while !should_exit.load(Ordering::Relaxed) {
             for sample in buffer.iter_mut() {
-                let value = osc.next_sample(self.shape);
-                *sample = (value * self.volume * i16::MAX as f32) as i16;
+                if should_play.load(Ordering::Relaxed) {
+                    let value = osc.next_sample(self.shape);
+                    *sample = (value * self.volume * i16::MAX as f32) as i16;
+                } else {
+                    *sample = 0i16;
+                }
             }
             
             let bytes: Vec<u8> = buffer.iter()

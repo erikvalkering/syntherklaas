@@ -86,6 +86,13 @@ Syntherklaas is a CLI synthesizer with four main modules:
 - Use `--backend pulse` for reliable audio on Termux
 - PulseAudio must be running (`pulseaudio --start` if needed)
 
+## Known Issues & Fixes
+
+**Real-time mode exit (FIXED)**
+- **Issue**: Ctrl+C could appear to hang if audio thread wasn't properly notified of exit signal
+- **Root cause**: Audio playback functions (`play_realtime_cpal`, `play_realtime_pulseaudio`) weren't receiving the `should_exit` signal, causing them to wait indefinitely for the spacebar state rather than checking for exit
+- **Fix**: Both realtime functions now accept both `should_play` (spacebar state) and `should_exit` (Ctrl+C signal) parameters, allowing clean shutdown when either backend is used
+
 ## MCP Servers
 
 **Recommended MCP servers for this project:**
