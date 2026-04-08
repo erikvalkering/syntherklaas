@@ -1,17 +1,20 @@
-use crate::audio::{AudioPlayer, AudioBackend};
+use crate::audio::{AudioBackend, AudioPlayer};
 use crate::waveform::WaveShape;
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind, EnableMouseCapture, DisableMouseCapture},
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
+        MouseEventKind,
+    },
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
+    Frame, Terminal,
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
-    widgets::{Block, Borders, Paragraph, Gauge},
-    Frame, Terminal,
+    widgets::{Block, Borders, Gauge, Paragraph},
 };
 use std::cell::Cell;
 use std::io;
@@ -25,6 +28,7 @@ pub struct AppState {
     volume: Arc<Mutex<f32>>,
     shape: Arc<Mutex<WaveShape>>,
     playing: Arc<AtomicBool>,
+    keep_playing: Arc<AtomicBool>,
     should_exit_tui: bool,
     should_exit_audio: Arc<AtomicBool>,
     focused_field: FocusedField,
@@ -39,6 +43,7 @@ pub struct AppState {
     vol_chunk_rect: Cell<Rect>,
     shape_chunk_rect: Cell<Rect>,
     play_chunk_rect: Cell<Rect>,
+    playtoggle_chunk_rect: Cell<Rect>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -47,6 +52,7 @@ enum FocusedField {
     Volume,
     Shape,
     PlayButton,
+    PlayToggleButton,
 }
 
 impl AppState {
@@ -56,6 +62,7 @@ impl AppState {
             volume: Arc::new(Mutex::new(0.5)),
             shape: Arc::new(Mutex::new(WaveShape::Sine)),
             playing: Arc::new(AtomicBool::new(false)),
+            keep_playing: Arc::new(AtomicBool::new(false)),
             should_exit_tui: false,
             should_exit_audio: Arc::new(AtomicBool::new(false)),
             focused_field: FocusedField::Frequency,
@@ -69,6 +76,7 @@ impl AppState {
             vol_chunk_rect: Cell::new(Rect::default()),
             shape_chunk_rect: Cell::new(Rect::default()),
             play_chunk_rect: Cell::new(Rect::default()),
+            playtoggle_chunk_rect: Cell::new(Rect::default()),
         }
     }
 
@@ -91,8 +99,8 @@ impl AppState {
             let init_vol = *volume.lock().unwrap();
             let init_shape = *shape.lock().unwrap();
 
-            let player = AudioPlayer::new(init_freq, init_vol, init_shape, 999.0)
-                .with_verbose(verbose);
+            let player =
+                AudioPlayer::new(init_freq, init_vol, init_shape, 999.0).with_verbose(verbose);
             let player = if let Some(b) = backend {
                 player.with_backend(b)
             } else {
@@ -132,7 +140,13 @@ impl AppState {
                         if verbose {
                             eprintln!("Switching to PulseAudio...");
                         }
-                        player.play_realtime_pulseaudio(playing, should_exit, Some(frequency), Some(volume), Some(shape))
+                        player.play_realtime_pulseaudio(
+                            playing,
+                            should_exit,
+                            Some(frequency),
+                            Some(volume),
+                            Some(shape),
+                        )
                     }
                 }
             };
@@ -152,69 +166,70 @@ impl AppState {
                     FocusedField::Frequency => FocusedField::Volume,
                     FocusedField::Volume => FocusedField::Shape,
                     FocusedField::Shape => FocusedField::PlayButton,
-                    FocusedField::PlayButton => FocusedField::Frequency,
+                    FocusedField::PlayButton => FocusedField::PlayToggleButton,
+                    FocusedField::PlayToggleButton => FocusedField::Frequency,
                 };
             }
-            KeyCode::Up => {
-                match self.focused_field {
-                    FocusedField::Frequency => {
-                        let mut freq = self.frequency.lock().unwrap();
-                        *freq = (*freq + 10.0).min(20000.0);
-                    }
-                    FocusedField::Volume => {
-                        let mut vol = self.volume.lock().unwrap();
-                        *vol = (*vol + 0.05).min(1.0);
-                    }
-                    _ => {}
+            KeyCode::Up => match self.focused_field {
+                FocusedField::Frequency => {
+                    let mut freq = self.frequency.lock().unwrap();
+                    *freq = (*freq + 10.0).min(20000.0);
                 }
-            }
-            KeyCode::Down => {
-                match self.focused_field {
-                    FocusedField::Frequency => {
-                        let mut freq = self.frequency.lock().unwrap();
-                        *freq = (*freq - 10.0).max(20.0);
-                    }
-                    FocusedField::Volume => {
-                        let mut vol = self.volume.lock().unwrap();
-                        *vol = (*vol - 0.05).max(0.0);
-                    }
-                    _ => {}
+                FocusedField::Volume => {
+                    let mut vol = self.volume.lock().unwrap();
+                    *vol = (*vol + 0.05).min(1.0);
                 }
-            }
-            KeyCode::Left | KeyCode::Char('a') => {
-                match self.focused_field {
-                    FocusedField::Shape => {
-                        let mut shape = self.shape.lock().unwrap();
-                        *shape = match *shape {
-                            WaveShape::Sine => WaveShape::Sawtooth,
-                            WaveShape::Square => WaveShape::Sine,
-                            WaveShape::Triangle => WaveShape::Square,
-                            WaveShape::Sawtooth => WaveShape::Triangle,
-                        };
-                    }
-                    _ => {}
+                _ => {}
+            },
+            KeyCode::Down => match self.focused_field {
+                FocusedField::Frequency => {
+                    let mut freq = self.frequency.lock().unwrap();
+                    *freq = (*freq - 10.0).max(20.0);
                 }
-            }
-            KeyCode::Right | KeyCode::Char('d') => {
-                match self.focused_field {
-                    FocusedField::Shape => {
-                        let mut shape = self.shape.lock().unwrap();
-                        *shape = match *shape {
-                            WaveShape::Sine => WaveShape::Square,
-                            WaveShape::Square => WaveShape::Triangle,
-                            WaveShape::Triangle => WaveShape::Sawtooth,
-                            WaveShape::Sawtooth => WaveShape::Sine,
-                        };
-                    }
-                    _ => {}
+                FocusedField::Volume => {
+                    let mut vol = self.volume.lock().unwrap();
+                    *vol = (*vol - 0.05).max(0.0);
                 }
-            }
-            KeyCode::Char(' ') | KeyCode::Enter => {
-                if self.focused_field == FocusedField::PlayButton {
+                _ => {}
+            },
+            KeyCode::Left | KeyCode::Char('a') => match self.focused_field {
+                FocusedField::Shape => {
+                    let mut shape = self.shape.lock().unwrap();
+                    *shape = match *shape {
+                        WaveShape::Sine => WaveShape::Sawtooth,
+                        WaveShape::Square => WaveShape::Sine,
+                        WaveShape::Triangle => WaveShape::Square,
+                        WaveShape::Sawtooth => WaveShape::Triangle,
+                    };
+                }
+                _ => {}
+            },
+            KeyCode::Right | KeyCode::Char('d') => match self.focused_field {
+                FocusedField::Shape => {
+                    let mut shape = self.shape.lock().unwrap();
+                    *shape = match *shape {
+                        WaveShape::Sine => WaveShape::Square,
+                        WaveShape::Square => WaveShape::Triangle,
+                        WaveShape::Triangle => WaveShape::Sawtooth,
+                        WaveShape::Sawtooth => WaveShape::Sine,
+                    };
+                }
+                _ => {}
+            },
+            KeyCode::Char(' ') | KeyCode::Enter => match self.focused_field {
+                FocusedField::PlayButton => {
                     self.playing.store(true, Ordering::Relaxed);
                     self.last_play_button_press = Instant::now();
                 }
-            }
+                FocusedField::PlayToggleButton => {
+                    let currently_playing = self.playing.load(Ordering::Relaxed);
+                    self.playing.store(!currently_playing, Ordering::Relaxed);
+                    self.keep_playing
+                        .store(!currently_playing, Ordering::Relaxed);
+                    self.last_play_button_press = Instant::now();
+                }
+                _ => {}
+            },
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.playing.store(false, Ordering::Relaxed);
                 self.should_exit_audio.store(true, Ordering::Relaxed);
@@ -226,18 +241,27 @@ impl AppState {
 
     fn handle_key_release(&mut self, key: KeyEvent) {
         match key.code {
-            KeyCode::Char(' ') | KeyCode::Enter => {
-                if self.focused_field == FocusedField::PlayButton {
-                    self.playing.store(false, Ordering::Relaxed);
+            KeyCode::Char(' ') | KeyCode::Enter => match self.focused_field {
+                FocusedField::PlayButton => self.playing.store(false, Ordering::Relaxed),
+                FocusedField::PlayToggleButton => {
+                    let currently_playing = self.playing.load(Ordering::Relaxed);
+                    self.playing.store(!currently_playing, Ordering::Relaxed);
+                    self.keep_playing
+                        .store(!currently_playing, Ordering::Relaxed);
+                    self.last_play_button_press = Instant::now();
                 }
-            }
+                _ => {}
+            },
             _ => {}
         }
     }
 
     fn check_timeout_release(&mut self) {
         // Detect key release by timeout (for systems like Termux that don't send release events)
-        if self.playing.load(Ordering::Relaxed) && self.last_play_button_press.elapsed() > Duration::from_millis(100) {
+        if !self.keep_playing.load(Ordering::Relaxed)
+            && self.playing.load(Ordering::Relaxed)
+            && self.last_play_button_press.elapsed() > Duration::from_millis(100)
+        {
             self.playing.store(false, Ordering::Relaxed);
         }
     }
@@ -268,6 +292,17 @@ impl AppState {
                 else if Self::is_in_rect(self.play_chunk_rect.get(), mouse.column, mouse.row) {
                     self.focused_field = FocusedField::PlayButton;
                     self.playing.store(true, Ordering::Relaxed);
+                    self.last_play_button_press = Instant::now();
+                } else if Self::is_in_rect(
+                    self.playtoggle_chunk_rect.get(),
+                    mouse.column,
+                    mouse.row,
+                ) {
+                    self.focused_field = FocusedField::PlayToggleButton;
+                    let currently_playing = self.playing.load(Ordering::Relaxed);
+                    self.playing.store(!currently_playing, Ordering::Relaxed);
+                    self.keep_playing
+                        .store(!currently_playing, Ordering::Relaxed);
                     self.last_play_button_press = Instant::now();
                 }
             }
@@ -314,38 +349,37 @@ impl AppState {
                     _ => {}
                 }
             }
-            MouseEventKind::ScrollUp => {
-                match self.focused_field {
-                    FocusedField::Frequency => {
-                        let mut freq = self.frequency.lock().unwrap();
-                        *freq = (*freq + 10.0).min(20000.0);
-                    }
-                    FocusedField::Volume => {
-                        let mut vol = self.volume.lock().unwrap();
-                        *vol = (*vol + 0.05).min(1.0);
-                    }
-                    _ => {}
+            MouseEventKind::ScrollUp => match self.focused_field {
+                FocusedField::Frequency => {
+                    let mut freq = self.frequency.lock().unwrap();
+                    *freq = (*freq + 10.0).min(20000.0);
                 }
-            }
-            MouseEventKind::ScrollDown => {
-                match self.focused_field {
-                    FocusedField::Frequency => {
-                        let mut freq = self.frequency.lock().unwrap();
-                        *freq = (*freq - 10.0).max(20.0);
-                    }
-                    FocusedField::Volume => {
-                        let mut vol = self.volume.lock().unwrap();
-                        *vol = (*vol - 0.05).max(0.0);
-                    }
-                    _ => {}
+                FocusedField::Volume => {
+                    let mut vol = self.volume.lock().unwrap();
+                    *vol = (*vol + 0.05).min(1.0);
                 }
-            }
+                _ => {}
+            },
+            MouseEventKind::ScrollDown => match self.focused_field {
+                FocusedField::Frequency => {
+                    let mut freq = self.frequency.lock().unwrap();
+                    *freq = (*freq - 10.0).max(20.0);
+                }
+                FocusedField::Volume => {
+                    let mut vol = self.volume.lock().unwrap();
+                    *vol = (*vol - 0.05).max(0.0);
+                }
+                _ => {}
+            },
             _ => {}
         }
     }
 }
 
-pub fn run_tui(audio_backend: Option<AudioBackend>, verbose: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_tui(
+    audio_backend: Option<AudioBackend>,
+    verbose: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -417,6 +451,7 @@ fn ui(f: &mut Frame, app: &AppState) {
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(3),
+            Constraint::Length(3),
             Constraint::Min(5),
         ])
         .split(f.size());
@@ -426,10 +461,13 @@ fn ui(f: &mut Frame, app: &AppState) {
     app.vol_chunk_rect.set(chunks[1]);
     app.shape_chunk_rect.set(chunks[2]);
     app.play_chunk_rect.set(chunks[3]);
+    app.playtoggle_chunk_rect.set(chunks[4]);
 
     // Frequency field
     let freq_style = if app.focused_field == FocusedField::Frequency {
-        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default()
     };
@@ -445,7 +483,9 @@ fn ui(f: &mut Frame, app: &AppState) {
 
     // Volume field
     let vol_style = if app.focused_field == FocusedField::Volume {
-        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default()
     };
@@ -462,7 +502,9 @@ fn ui(f: &mut Frame, app: &AppState) {
 
     // Waveform shape
     let shape_style = if app.focused_field == FocusedField::Shape {
-        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default()
     };
@@ -483,7 +525,10 @@ fn ui(f: &mut Frame, app: &AppState) {
 
     // Play button
     let play_style = if app.focused_field == FocusedField::PlayButton {
-        Style::default().fg(Color::White).bg(Color::Blue).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::White)
+            .bg(Color::Blue)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default()
     };
@@ -501,6 +546,29 @@ fn ui(f: &mut Frame, app: &AppState) {
         .alignment(Alignment::Center);
     f.render_widget(play_para, chunks[3]);
 
+    // Play toggle button
+    let playtoggle_style = if app.focused_field == FocusedField::PlayToggleButton {
+        Style::default()
+            .fg(Color::White)
+            .bg(Color::Blue)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    };
+    let playtoggle_status = if app.playing.load(Ordering::Relaxed) {
+        "Playing (Click or press Space/Enter to toggle)"
+    } else {
+        "Stopped (Click or press Space to toggle)"
+    };
+    let playtoggle_block = Block::default()
+        .title("Play Toggle Button")
+        .borders(Borders::ALL)
+        .style(playtoggle_style);
+    let playtoggle_para = Paragraph::new(playtoggle_status)
+        .block(playtoggle_block)
+        .alignment(Alignment::Center);
+    f.render_widget(playtoggle_para, chunks[4]);
+
     // Instructions
     let instructions = vec![
         Line::from("Controls:"),
@@ -510,9 +578,7 @@ fn ui(f: &mut Frame, app: &AppState) {
         Line::from("  Space/Enter - Toggle play button"),
         Line::from("  q/Esc - Quit"),
     ];
-    let instructions_block = Block::default()
-        .title("Instructions")
-        .borders(Borders::ALL);
+    let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
     let instructions_para = Paragraph::new(instructions).block(instructions_block);
-    f.render_widget(instructions_para, chunks[4]);
+    f.render_widget(instructions_para, chunks[5]);
 }
