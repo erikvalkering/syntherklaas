@@ -142,24 +142,28 @@ impl AppState {
                 }
                 _ => {}
             },
-            KeyCode::Left | KeyCode::Char('a') => if self.focused_field == FocusedField::Shape {
-                let mut shape = self.shape.lock().unwrap();
-                *shape = match *shape {
-                    WaveShape::Sine => WaveShape::Sawtooth,
-                    WaveShape::Square => WaveShape::Sine,
-                    WaveShape::Triangle => WaveShape::Square,
-                    WaveShape::Sawtooth => WaveShape::Triangle,
-                };
-            },
-            KeyCode::Right | KeyCode::Char('d') => if self.focused_field == FocusedField::Shape {
-                let mut shape = self.shape.lock().unwrap();
-                *shape = match *shape {
-                    WaveShape::Sine => WaveShape::Square,
-                    WaveShape::Square => WaveShape::Triangle,
-                    WaveShape::Triangle => WaveShape::Sawtooth,
-                    WaveShape::Sawtooth => WaveShape::Sine,
-                };
-            },
+            KeyCode::Left | KeyCode::Char('a') => {
+                if self.focused_field == FocusedField::Shape {
+                    let mut shape = self.shape.lock().unwrap();
+                    *shape = match *shape {
+                        WaveShape::Sine => WaveShape::Sawtooth,
+                        WaveShape::Square => WaveShape::Sine,
+                        WaveShape::Triangle => WaveShape::Square,
+                        WaveShape::Sawtooth => WaveShape::Triangle,
+                    };
+                }
+            }
+            KeyCode::Right | KeyCode::Char('d') => {
+                if self.focused_field == FocusedField::Shape {
+                    let mut shape = self.shape.lock().unwrap();
+                    *shape = match *shape {
+                        WaveShape::Sine => WaveShape::Square,
+                        WaveShape::Square => WaveShape::Triangle,
+                        WaveShape::Triangle => WaveShape::Sawtooth,
+                        WaveShape::Sawtooth => WaveShape::Sine,
+                    };
+                }
+            }
             KeyCode::Char(' ') | KeyCode::Enter => match self.focused_field {
                 FocusedField::PlayButton => {
                     self.playing.store(true, Ordering::Relaxed);
@@ -264,11 +268,11 @@ impl AppState {
                 match self.focused_field {
                     FocusedField::Frequency => {
                         let mut freq = self.frequency.lock().unwrap();
-                        *freq = (*freq + (delta as f32 * 10.0)).max(20.0).min(20000.0);
+                        *freq = (*freq + (delta as f32 * 10.0)).clamp(20.0, 20000.0);
                     }
                     FocusedField::Volume => {
                         let mut vol = self.volume.lock().unwrap();
-                        *vol = (*vol + (delta as f32 * 0.01)).max(0.0).min(1.0);
+                        *vol = (*vol + (delta as f32 * 0.01)).clamp(0.0, 1.0);
                     }
                     FocusedField::Shape => {
                         // Horizontal drag cycles through shapes
