@@ -51,8 +51,8 @@ impl KeyboardHandler {
             let key_repeat_interval = Duration::from_millis(100);
 
             loop {
-                if event::poll(Duration::from_millis(50)).unwrap_or(false) {
-                    if let Ok(Event::Key(key_event)) = event::read() {
+                if event::poll(Duration::from_millis(50)).unwrap_or(false)
+                    && let Ok(Event::Key(key_event)) = event::read() {
                         match key_event.code {
                             KeyCode::Char(' ') => {
                                 match key_event.kind {
@@ -77,7 +77,6 @@ impl KeyboardHandler {
                             _ => {}
                         }
                     }
-                }
 
                 // Detect key release by timeout (for systems like Termux that don't send release events)
                 if spacebar.load(Ordering::Relaxed) && last_spacebar_press.elapsed() > key_repeat_interval {

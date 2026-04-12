@@ -142,29 +142,23 @@ impl AppState {
                 }
                 _ => {}
             },
-            KeyCode::Left | KeyCode::Char('a') => match self.focused_field {
-                FocusedField::Shape => {
-                    let mut shape = self.shape.lock().unwrap();
-                    *shape = match *shape {
-                        WaveShape::Sine => WaveShape::Sawtooth,
-                        WaveShape::Square => WaveShape::Sine,
-                        WaveShape::Triangle => WaveShape::Square,
-                        WaveShape::Sawtooth => WaveShape::Triangle,
-                    };
-                }
-                _ => {}
+            KeyCode::Left | KeyCode::Char('a') => if self.focused_field == FocusedField::Shape {
+                let mut shape = self.shape.lock().unwrap();
+                *shape = match *shape {
+                    WaveShape::Sine => WaveShape::Sawtooth,
+                    WaveShape::Square => WaveShape::Sine,
+                    WaveShape::Triangle => WaveShape::Square,
+                    WaveShape::Sawtooth => WaveShape::Triangle,
+                };
             },
-            KeyCode::Right | KeyCode::Char('d') => match self.focused_field {
-                FocusedField::Shape => {
-                    let mut shape = self.shape.lock().unwrap();
-                    *shape = match *shape {
-                        WaveShape::Sine => WaveShape::Square,
-                        WaveShape::Square => WaveShape::Triangle,
-                        WaveShape::Triangle => WaveShape::Sawtooth,
-                        WaveShape::Sawtooth => WaveShape::Sine,
-                    };
-                }
-                _ => {}
+            KeyCode::Right | KeyCode::Char('d') => if self.focused_field == FocusedField::Shape {
+                let mut shape = self.shape.lock().unwrap();
+                *shape = match *shape {
+                    WaveShape::Sine => WaveShape::Square,
+                    WaveShape::Square => WaveShape::Triangle,
+                    WaveShape::Triangle => WaveShape::Sawtooth,
+                    WaveShape::Sawtooth => WaveShape::Sine,
+                };
             },
             KeyCode::Char(' ') | KeyCode::Enter => match self.focused_field {
                 FocusedField::PlayButton => {
