@@ -1,4 +1,4 @@
-use crate::audio::{AudioBackend, AudioPlayer};
+use crate::audio::AudioPlayer;
 use crate::waveform::WaveShape;
 use crossterm::{
     event::{
@@ -32,7 +32,6 @@ pub struct AppState {
     should_exit_tui: bool,
     should_exit_audio: Arc<AtomicBool>,
     focused_field: FocusedField,
-    backend: Option<AudioBackend>,
     verbose: bool,
     audio_thread: Option<std::thread::JoinHandle<()>>,
     last_play_button_press: Instant,
@@ -56,7 +55,7 @@ enum FocusedField {
 }
 
 impl AppState {
-    fn new(backend: Option<AudioBackend>, verbose: bool) -> Self {
+    fn new(verbose: bool) -> Self {
         AppState {
             frequency: Arc::new(Mutex::new(440.0)),
             volume: Arc::new(Mutex::new(0.5)),
@@ -66,7 +65,6 @@ impl AppState {
             should_exit_tui: false,
             should_exit_audio: Arc::new(AtomicBool::new(false)),
             focused_field: FocusedField::Frequency,
-            backend,
             verbose,
             audio_thread: None,
             last_play_button_press: Instant::now(),
@@ -84,112 +82,25 @@ impl AppState {
         let frequency = Arc::clone(&self.frequency);
         let volume = Arc::clone(&self.volume);
         let shape = Arc::clone(&self.shape);
-        let backend = self.backend;
         let verbose = self.verbose;
         let playing = Arc::clone(&self.playing);
         let should_exit = Arc::clone(&self.should_exit_audio);
 
         let audio_thread = thread::spawn(move || {
-            // Set up panic hook to suppress output unless verbose
-            if !verbose {
-                std::panic::set_hook(Box::new(|_| {}));
-            }
-
             let init_freq = *frequency.lock().unwrap();
             let init_vol = *volume.lock().unwrap();
             let init_shape = *shape.lock().unwrap();
 
             let player =
                 AudioPlayer::new(init_freq, init_vol, init_shape, 999.0).with_verbose(verbose);
-            let player = if let Some(b) = backend {
-                player.with_backend(b)
-            } else {
-                player
-            };
 
-            // Try realtime playback with fallback
-            use std::panic;
-            let result = match backend {
-                #[cfg(target_os = "android")]
-                Some(AudioBackend::PulseAudio) => player.play_realtime_pulseaudio(
-                    Arc::clone(&playing),
-                    Arc::clone(&should_exit),
-                    Some(Arc::clone(&frequency)),
-                    Some(Arc::clone(&volume)),
-                    Some(Arc::clone(&shape)),
-                ),
-
-                Some(AudioBackend::Cpal) => player.play_realtime_cpal(
-                    Arc::clone(&playing),
-                    Arc::clone(&should_exit),
-                    Some(Arc::clone(&frequency)),
-                    Some(Arc::clone(&volume)),
-                    Some(Arc::clone(&shape)),
-                ),
-
-                _ => match panic::catch_unwind(panic::AssertUnwindSafe(|| {
-                    player.play_realtime_cpal(
-                        Arc::clone(&playing),
-                        Arc::clone(&should_exit),
-                        Some(Arc::clone(&frequency)),
-                        Some(Arc::clone(&volume)),
-                        Some(Arc::clone(&shape)),
-                    )
-                })) {
-                    Ok(Ok(())) => Ok(()),
-
-                    Ok(Err(e)) => {
-                        if verbose {
-                            eprintln!("Switching to PulseAudio...");
-                        }
-
-                        #[cfg(target_os = "android")]
-                        {
-                            player.play_realtime_pulseaudio(
-                                playing,
-                                should_exit,
-                                Some(frequency),
-                                Some(volume),
-                                Some(shape),
-                            )
-                        }
-
-                        #[cfg(not(target_os = "android"))]
-                        {
-                            eprintln!(
-                                "Audio error: Failed to initialize audio playback with the selected backend."
-                            );
-                            Err(e)
-                        }
-                    }
-
-                    Err(e) => {
-                        if verbose {
-                            eprintln!("Switching to PulseAudio...");
-                        }
-
-                        #[cfg(target_os = "android")]
-                        {
-                            player.play_realtime_pulseaudio(
-                                playing,
-                                should_exit,
-                                Some(frequency),
-                                Some(volume),
-                                Some(shape),
-                            )
-                        }
-
-                        #[cfg(not(target_os = "android"))]
-                        {
-                            eprintln!(
-                                "Audio error: Failed to initialize audio playback with the selected backend: {:?}.",
-                                e
-                            );
-                            Err(format!("Audio initialization failed: {:?}", e).into())
-                        }
-                    }
-                },
-            };
+            let result = player.play_realtime(
+                Arc::clone(&playing),
+                Arc::clone(&should_exit),
+                Some(Arc::clone(&frequency)),
+                Some(Arc::clone(&volume)),
+                Some(Arc::clone(&shape)),
+            );
 
             if let Err(e) = result {
                 eprintln!("Audio error: {}", e);
@@ -416,10 +327,7 @@ impl AppState {
     }
 }
 
-pub fn run_tui(
-    audio_backend: Option<AudioBackend>,
-    verbose: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_tui(verbose: bool) -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -427,7 +335,7 @@ pub fn run_tui(
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
 
-    let mut app = AppState::new(audio_backend, verbose);
+    let mut app = AppState::new(verbose);
     app.start_audio_thread();
 
     let result = run_app(terminal, &mut app);

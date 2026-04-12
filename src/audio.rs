@@ -3,21 +3,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum AudioBackend {
-    Cpal,
-
-    #[cfg(target_os = "android")]
-    PulseAudio,
-}
-
 pub struct AudioPlayer {
     pub frequency: f32,
     pub volume: f32,
     pub shape: WaveShape,
     #[allow(dead_code)]
     pub duration: f32,
-    pub backend: Option<AudioBackend>,
     pub verbose: bool,
 }
 
@@ -28,14 +19,8 @@ impl AudioPlayer {
             volume,
             shape,
             duration,
-            backend: None,
             verbose: false,
         }
-    }
-
-    pub fn with_backend(mut self, backend: AudioBackend) -> Self {
-        self.backend = Some(backend);
-        self
     }
 
     pub fn with_verbose(mut self, verbose: bool) -> Self {
@@ -43,7 +28,8 @@ impl AudioPlayer {
         self
     }
 
-    pub fn play_realtime_cpal(
+    #[cfg(not(target_os = "android"))]
+    pub fn play_realtime(
         &self,
         should_play: Arc<AtomicBool>,
         should_exit: Arc<AtomicBool>,
@@ -115,7 +101,7 @@ impl AudioPlayer {
     }
 
     #[cfg(target_os = "android")]
-    pub fn play_realtime_pulseaudio(
+    pub fn play_realtime(
         &self,
         should_play: Arc<AtomicBool>,
         should_exit: Arc<AtomicBool>,
