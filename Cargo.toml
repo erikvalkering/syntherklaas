@@ -8,6 +8,9 @@ clap = { version = "4.5", features = ["derive"] }
 cpal = "0.17"
 crossterm = "0.29"
 signal-hook = "0.4"
+ratatui = "0.27"
+
+[target.'cfg(target_os = "android")'.dependencies]
 libpulse-binding = "2.30"
 libpulse-simple-binding = "2.29"
-ratatui = "0.27"
+

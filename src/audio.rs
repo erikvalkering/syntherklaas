@@ -6,6 +6,8 @@ use std::time::Duration;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AudioBackend {
     Cpal,
+
+    #[cfg(target_os = "android")]
     PulseAudio,
 }
 
@@ -112,6 +114,7 @@ impl AudioPlayer {
         Ok(())
     }
 
+    #[cfg(target_os = "android")]
     pub fn play_realtime_pulseaudio(
         &self,
         should_play: Arc<AtomicBool>,

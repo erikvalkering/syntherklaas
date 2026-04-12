@@ -1,7 +1,7 @@
-mod waveform;
 mod audio;
 mod keyboard;
 mod tui;
+mod waveform;
 
 use clap::Parser;
 
@@ -24,7 +24,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = if let Some(backend_str) = args.backend {
         match backend_str.to_lowercase().as_str() {
             "cpal" => Some(audio::AudioBackend::Cpal),
+
+            #[cfg(target_os = "android")]
             "pulse" => Some(audio::AudioBackend::PulseAudio),
+
             _ => return Err(format!("Unknown backend '{}'. Use: cpal, pulse", backend_str).into()),
         }
     } else {

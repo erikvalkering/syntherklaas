@@ -109,24 +109,25 @@ impl AppState {
 
             // Try realtime playback with fallback
             use std::panic;
-            let result = if let Some(AudioBackend::PulseAudio) = backend {
-                player.play_realtime_pulseaudio(
+            let result = match backend {
+                #[cfg(target_os = "android")]
+                Some(AudioBackend::PulseAudio) => player.play_realtime_pulseaudio(
                     Arc::clone(&playing),
                     Arc::clone(&should_exit),
                     Some(Arc::clone(&frequency)),
                     Some(Arc::clone(&volume)),
                     Some(Arc::clone(&shape)),
-                )
-            } else if let Some(AudioBackend::Cpal) = backend {
-                player.play_realtime_cpal(
+                ),
+
+                Some(AudioBackend::Cpal) => player.play_realtime_cpal(
                     Arc::clone(&playing),
                     Arc::clone(&should_exit),
                     Some(Arc::clone(&frequency)),
                     Some(Arc::clone(&volume)),
                     Some(Arc::clone(&shape)),
-                )
-            } else {
-                match panic::catch_unwind(panic::AssertUnwindSafe(|| {
+                ),
+
+                _ => match panic::catch_unwind(panic::AssertUnwindSafe(|| {
                     player.play_realtime_cpal(
                         Arc::clone(&playing),
                         Arc::clone(&should_exit),
@@ -136,19 +137,58 @@ impl AppState {
                     )
                 })) {
                     Ok(Ok(())) => Ok(()),
-                    Ok(Err(_)) | Err(_) => {
+
+                    Ok(Err(e)) => {
                         if verbose {
                             eprintln!("Switching to PulseAudio...");
                         }
-                        player.play_realtime_pulseaudio(
-                            playing,
-                            should_exit,
-                            Some(frequency),
-                            Some(volume),
-                            Some(shape),
-                        )
+
+                        #[cfg(target_os = "android")]
+                        {
+                            player.play_realtime_pulseaudio(
+                                playing,
+                                should_exit,
+                                Some(frequency),
+                                Some(volume),
+                                Some(shape),
+                            )
+                        }
+
+                        #[cfg(not(target_os = "android"))]
+                        {
+                            eprintln!(
+                                "Audio error: Failed to initialize audio playback with the selected backend."
+                            );
+                            Err(e)
+                        }
                     }
-                }
+
+                    Err(e) => {
+                        if verbose {
+                            eprintln!("Switching to PulseAudio...");
+                        }
+
+                        #[cfg(target_os = "android")]
+                        {
+                            player.play_realtime_pulseaudio(
+                                playing,
+                                should_exit,
+                                Some(frequency),
+                                Some(volume),
+                                Some(shape),
+                            )
+                        }
+
+                        #[cfg(not(target_os = "android"))]
+                        {
+                            eprintln!(
+                                "Audio error: Failed to initialize audio playback with the selected backend: {:?}.",
+                                e
+                            );
+                            Err(format!("Audio initialization failed: {:?}", e).into())
+                        }
+                    }
+                },
             };
 
             if let Err(e) = result {
