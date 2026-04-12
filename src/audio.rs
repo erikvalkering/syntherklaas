@@ -1,24 +1,20 @@
 use crate::waveform::{Oscillator, WaveShape};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 pub struct AudioPlayer {
     pub frequency: f32,
     pub volume: f32,
     pub shape: WaveShape,
-    #[allow(dead_code)]
-    pub duration: f32,
     pub verbose: bool,
 }
 
 impl AudioPlayer {
-    pub fn new(frequency: f32, volume: f32, shape: WaveShape, duration: f32) -> Self {
+    pub fn new(frequency: f32, volume: f32, shape: WaveShape) -> Self {
         AudioPlayer {
             frequency,
             volume,
             shape,
-            duration,
             verbose: false,
         }
     }

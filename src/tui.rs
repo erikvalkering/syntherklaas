@@ -91,8 +91,7 @@ impl AppState {
             let init_vol = *volume.lock().unwrap();
             let init_shape = *shape.lock().unwrap();
 
-            let player =
-                AudioPlayer::new(init_freq, init_vol, init_shape, 999.0).with_verbose(verbose);
+            let player = AudioPlayer::new(init_freq, init_vol, init_shape).with_verbose(verbose);
 
             let result = player.play_realtime(
                 Arc::clone(&playing),
