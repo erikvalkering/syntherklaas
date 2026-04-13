@@ -1,6 +1,7 @@
 use crate::waveform::{Oscillator, WaveShape};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 pub struct AudioPlayer {
     pub frequency: f32,
@@ -24,8 +25,8 @@ impl AudioPlayer {
         self
     }
 
-    #[cfg(not(target_os = "android"))]
-    pub fn play_realtime(
+    #[allow(unused)]
+    fn play_realtime_cpal(
         &self,
         should_play: Arc<AtomicBool>,
         should_exit: Arc<AtomicBool>,
@@ -97,7 +98,7 @@ impl AudioPlayer {
     }
 
     #[cfg(target_os = "android")]
-    pub fn play_realtime(
+    fn play_realtime_pulseaudio(
         &self,
         should_play: Arc<AtomicBool>,
         should_exit: Arc<AtomicBool>,
@@ -169,5 +170,29 @@ impl AudioPlayer {
         }
 
         Ok(())
+    }
+
+    pub fn play_realtime(
+        &self,
+        should_play: Arc<AtomicBool>,
+        should_exit: Arc<AtomicBool>,
+        freq_param: Option<Arc<Mutex<f32>>>,
+        vol_param: Option<Arc<Mutex<f32>>>,
+        shape_param: Option<Arc<Mutex<crate::waveform::WaveShape>>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        #[cfg(target_os = "android")]
+        {
+            self.play_realtime_pulseaudio(
+                should_play,
+                should_exit,
+                freq_param,
+                vol_param,
+                shape_param,
+            )
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            self.play_realtime_cpal(should_play, should_exit, freq_param, vol_param, shape_param)
+        }
     }
 }
