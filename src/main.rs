@@ -1,3 +1,4 @@
+mod app;
 mod audio;
 mod keyboard;
 mod tui;
