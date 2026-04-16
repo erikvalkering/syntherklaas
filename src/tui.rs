@@ -127,7 +127,11 @@ fn run_app(
                     if key.kind == event::KeyEventKind::Press {
                         *state = update(state.clone(), key_to_message(key, state));
                     } else if key.kind == event::KeyEventKind::Release {
-                        *state = update(state.clone(), Message::ReleasePlayButton);
+                        if let Some(msg) = key_to_release_message(key) {
+                            *state = update(state.clone(), msg);
+                        } else {
+                            *state = update(state.clone(), Message::ReleasePlayButton);
+                        }
                     }
                 }
                 Event::Mouse(mouse) => {
@@ -162,7 +166,37 @@ fn run_app(
 }
 
 fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
+    use crate::music::PianoKey;
+    
+    // Piano keyboard mapping - using QWERTY layout
+    // Row 1: Q W E R T Y U I  (C C# D D# E F F# G)
+    // Row 2: Z X C V B N M    (G# A A# B C C# D)
     match key.code {
+        // Piano keys - QWERTY layout (Octave 4) - CHECK THESE FIRST!
+        KeyCode::Char('q') => Message::PianoPressKey(PianoKey::C4),
+        KeyCode::Char('2') => Message::PianoPressKey(PianoKey::CSharp4),
+        KeyCode::Char('w') => Message::PianoPressKey(PianoKey::D4),
+        KeyCode::Char('3') => Message::PianoPressKey(PianoKey::DSharp4),
+        KeyCode::Char('e') => Message::PianoPressKey(PianoKey::E4),
+        KeyCode::Char('r') => Message::PianoPressKey(PianoKey::F4),
+        KeyCode::Char('5') => Message::PianoPressKey(PianoKey::FSharp4),
+        KeyCode::Char('t') => Message::PianoPressKey(PianoKey::G4),
+        KeyCode::Char('6') => Message::PianoPressKey(PianoKey::GSharp4),
+        KeyCode::Char('y') => Message::PianoPressKey(PianoKey::A4),
+        KeyCode::Char('7') => Message::PianoPressKey(PianoKey::ASharp4),
+        KeyCode::Char('u') => Message::PianoPressKey(PianoKey::B4),
+        KeyCode::Char('i') => Message::PianoPressKey(PianoKey::C5),
+        
+        // Alt row: Z X C V B N M (G3 and higher octave)
+        KeyCode::Char('z') => Message::PianoPressKey(PianoKey::G3),
+        KeyCode::Char('x') => Message::PianoPressKey(PianoKey::GSharp3),
+        KeyCode::Char('c') => Message::PianoPressKey(PianoKey::A3),
+        KeyCode::Char('v') => Message::PianoPressKey(PianoKey::ASharp3),
+        KeyCode::Char('b') => Message::PianoPressKey(PianoKey::B3),
+        KeyCode::Char('n') => Message::PianoPressKey(PianoKey::C4),
+        KeyCode::Char('m') => Message::PianoPressKey(PianoKey::CSharp4),
+        
+        // UI controls
         KeyCode::Tab => Message::FocusNext,
         KeyCode::Up => {
             if state.focused_field == FocusedField::Frequency {
@@ -193,9 +227,87 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
                 Message::FocusNext
             }
         }
-        KeyCode::Esc | KeyCode::Char('q') => Message::Exit,
+        KeyCode::Esc => Message::Exit,
+        
         _ => Message::FocusNext,
     }
+}
+
+fn key_to_release_message(key: KeyEvent) -> Option<Message> {
+    use crate::music::PianoKey;
+    
+    match key.code {
+        // Piano keys - QWERTY layout (Octave 4)
+        KeyCode::Char('q') => Some(Message::PianoReleaseKey(PianoKey::C4)),
+        KeyCode::Char('2') => Some(Message::PianoReleaseKey(PianoKey::CSharp4)),
+        KeyCode::Char('w') => Some(Message::PianoReleaseKey(PianoKey::D4)),
+        KeyCode::Char('3') => Some(Message::PianoReleaseKey(PianoKey::DSharp4)),
+        KeyCode::Char('e') => Some(Message::PianoReleaseKey(PianoKey::E4)),
+        KeyCode::Char('r') => Some(Message::PianoReleaseKey(PianoKey::F4)),
+        KeyCode::Char('5') => Some(Message::PianoReleaseKey(PianoKey::FSharp4)),
+        KeyCode::Char('t') => Some(Message::PianoReleaseKey(PianoKey::G4)),
+        KeyCode::Char('6') => Some(Message::PianoReleaseKey(PianoKey::GSharp4)),
+        KeyCode::Char('y') => Some(Message::PianoReleaseKey(PianoKey::A4)),
+        KeyCode::Char('7') => Some(Message::PianoReleaseKey(PianoKey::ASharp4)),
+        KeyCode::Char('u') => Some(Message::PianoReleaseKey(PianoKey::B4)),
+        KeyCode::Char('i') => Some(Message::PianoReleaseKey(PianoKey::C5)),
+        
+        // Alt row: Z X C V B N M
+        KeyCode::Char('z') => Some(Message::PianoReleaseKey(PianoKey::G3)),
+        KeyCode::Char('x') => Some(Message::PianoReleaseKey(PianoKey::GSharp3)),
+        KeyCode::Char('c') => Some(Message::PianoReleaseKey(PianoKey::A3)),
+        KeyCode::Char('v') => Some(Message::PianoReleaseKey(PianoKey::ASharp3)),
+        KeyCode::Char('b') => Some(Message::PianoReleaseKey(PianoKey::B3)),
+        KeyCode::Char('n') => Some(Message::PianoReleaseKey(PianoKey::C4)),
+        KeyCode::Char('m') => Some(Message::PianoReleaseKey(PianoKey::CSharp4)),
+        
+        _ => None,
+    }
+}
+
+fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &SynthState) {
+    use crate::music::PianoKey;
+    
+    if area.height < 2 {
+        return;
+    }
+
+    let block = Block::default()
+        .title("Piano Keyboard (Q-I and Z-M)")
+        .borders(Borders::ALL);
+    
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    if inner.height < 1 {
+        return;
+    }
+
+    // Display piano keys - show which ones are active
+    let mut key_display = String::new();
+    
+    // Show octave 3 bottom row and octave 4 top row
+    let keys_to_show = [
+        PianoKey::G3, PianoKey::GSharp3, PianoKey::A3, PianoKey::ASharp3, PianoKey::B3,
+        PianoKey::C4, PianoKey::CSharp4, PianoKey::D4, PianoKey::DSharp4, PianoKey::E4,
+        PianoKey::F4, PianoKey::FSharp4, PianoKey::G4, PianoKey::GSharp4, PianoKey::A4,
+        PianoKey::ASharp4, PianoKey::B4, PianoKey::C5, PianoKey::CSharp5, PianoKey::D5,
+    ];
+
+    for (i, key) in keys_to_show.iter().enumerate() {
+        if i > 0 && i % 12 == 0 {
+            key_display.push('\n');
+        }
+        if state.piano_active_keys.contains(key) {
+            key_display.push_str(&format!("[{}]", key.name()));
+        } else {
+            key_display.push_str(&format!(" {} ", key.name()));
+        }
+    }
+
+    let para = Paragraph::new(key_display)
+        .alignment(Alignment::Center);
+    f.render_widget(para, inner);
 }
 
 fn render_ui(f: &mut Frame, state: &SynthState) {
@@ -212,7 +324,8 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Min(5),
+            Constraint::Length(5),
+            Constraint::Min(1),
         ])
         .split(f.size());
 
@@ -322,16 +435,18 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .alignment(Alignment::Center);
     f.render_widget(playtoggle_para, chunks[4]);
 
+    // Piano keyboard
+    render_piano_widget(f, chunks[5], state);
+
     // Instructions
     let instructions = vec![
+        Line::from("Piano: Q W E R T Y U I (Z X C V B N M)"),
         Line::from("Controls:"),
-        Line::from("  Tab - Switch field"),
-        Line::from("  ↑/↓ - Adjust frequency/volume"),
-        Line::from("  ←/→ - Change waveform"),
-        Line::from("  Space/Enter - Toggle play button"),
+        Line::from("  Tab - Switch field | ↑/↓ - Adjust freq/vol"),
+        Line::from("  ←/→ - Change waveform | Space - Play button"),
         Line::from("  q/Esc - Quit"),
     ];
     let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
     let instructions_para = Paragraph::new(instructions).block(instructions_block);
-    f.render_widget(instructions_para, chunks[5]);
+    f.render_widget(instructions_para, chunks[6]);
 }

@@ -1,6 +1,7 @@
 mod app;
 mod audio;
 mod keyboard;
+mod music;
 mod tui;
 mod waveform;
 

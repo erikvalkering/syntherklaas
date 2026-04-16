@@ -1,4 +1,5 @@
 use crate::waveform::WaveShape;
+use crate::music::PianoKey;
 use crossterm::event::MouseEvent;
 
 #[derive(Debug, Clone)]
@@ -22,6 +23,10 @@ pub enum Message {
     PressPlayButton,
     ReleasePlayButton,
     TogglePlay,
+
+    // Piano control
+    PianoPressKey(PianoKey),
+    PianoReleaseKey(PianoKey),
 
     // UI focus
     FocusNext,

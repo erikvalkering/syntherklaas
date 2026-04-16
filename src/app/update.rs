@@ -92,6 +92,22 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
                 FocusedField::PlayToggleButton => FocusedField::PlayButton,
             };
         }
+        Message::PianoPressKey(key) => {
+            state.piano_active_keys.insert(key);
+            state.frequency = key.frequency();
+            state.is_playing = true;
+        }
+        Message::PianoReleaseKey(key) => {
+            state.piano_active_keys.remove(&key);
+            if state.piano_active_keys.is_empty() {
+                state.is_playing = false;
+            } else {
+                // Play the highest remaining key
+                if let Some(&highest_key) = state.piano_active_keys.iter().max() {
+                    state.frequency = highest_key.frequency();
+                }
+            }
+        }
         Message::CheckTimeoutRelease => {
             if !state.keep_playing
                 && state.is_playing
