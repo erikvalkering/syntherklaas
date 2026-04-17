@@ -15,8 +15,6 @@ pub enum Message {
     SetVolume(f32),
 
     // Waveform selection
-    NextWaveform,
-    PrevWaveform,
     SetWaveform(WaveShape),
 
     // Playback control

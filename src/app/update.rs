@@ -24,22 +24,6 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
         Message::SetVolume(vol) => {
             state.volume = vol.clamp(0.0, 1.0);
         }
-        Message::NextWaveform => {
-            state.shape = match state.shape {
-                WaveShape::Sine => WaveShape::Square,
-                WaveShape::Square => WaveShape::Triangle,
-                WaveShape::Triangle => WaveShape::Sawtooth,
-                WaveShape::Sawtooth => WaveShape::Sine,
-            };
-        }
-        Message::PrevWaveform => {
-            state.shape = match state.shape {
-                WaveShape::Sine => WaveShape::Sawtooth,
-                WaveShape::Square => WaveShape::Sine,
-                WaveShape::Triangle => WaveShape::Square,
-                WaveShape::Sawtooth => WaveShape::Triangle,
-            };
-        }
         Message::SetWaveform(shape) => {
             state.shape = shape;
         }

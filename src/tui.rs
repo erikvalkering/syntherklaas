@@ -193,6 +193,12 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
         KeyCode::Char('n') => Message::PianoPressKey(PianoKey::C4),
         KeyCode::Char('m') => Message::PianoPressKey(PianoKey::CSharp4),
 
+        // Waveform selection
+        KeyCode::Char('1') => Message::SetWaveform(WaveShape::Sine),
+        KeyCode::Char('!') => Message::SetWaveform(WaveShape::Square),  // Shift+1
+        KeyCode::Char('@') => Message::SetWaveform(WaveShape::Triangle),  // Shift+2
+        KeyCode::Char('#') => Message::SetWaveform(WaveShape::Sawtooth),  // Shift+3
+
         // UI controls
         KeyCode::Tab => Message::FocusNext,
         KeyCode::Up => {
@@ -213,8 +219,6 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
                 Message::FocusNext
             }
         }
-        KeyCode::Left | KeyCode::Char('a') => Message::PrevWaveform,
-        KeyCode::Right | KeyCode::Char('d') => Message::NextWaveform,
         KeyCode::Char(' ') | KeyCode::Enter => {
             if state.focused_field == FocusedField::PlayButton {
                 Message::PressPlayButton
@@ -322,6 +326,43 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
     f.render_widget(para, inner);
 }
 
+fn render_waveform_button(
+    f: &mut Frame,
+    area: ratatui::layout::Rect,
+    wave_type: WaveShape,
+    active_wave: WaveShape,
+) {
+    let is_active = wave_type == active_wave;
+
+    // ASCII art for each waveform
+    let (label, ascii_art) = match wave_type {
+        WaveShape::Sine => ("Sine", "   /\\    /\\  \n  /  \\  /  \\\n"),
+        WaveShape::Square => ("Square", "╔═╗ ╔═╗\n║ ║ ║ ║\n"),
+        WaveShape::Triangle => ("Tri", "  /\\  /\\ \n /  \\/  \\\n"),
+        WaveShape::Sawtooth => ("Saw", "\\  /\\ \n \\/ \\  \n"),
+    };
+
+    let style = if is_active {
+        Style::default()
+            .fg(Color::Black)
+            .bg(Color::Cyan)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    };
+
+    let block = Block::default()
+        .title(label)
+        .borders(Borders::ALL)
+        .style(style);
+
+    let para = Paragraph::new(ascii_art)
+        .block(block)
+        .alignment(Alignment::Center);
+
+    f.render_widget(para, area);
+}
+
 fn render_ui(f: &mut Frame, state: &SynthState) {
     let frequency = state.frequency;
     let volume = state.volume;
@@ -378,28 +419,22 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .style(Style::default().fg(Color::Green));
     f.render_widget(vol_gauge, chunks[1]);
 
-    // Waveform shape
-    let shape_style = if state.focused_field == FocusedField::Shape {
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD)
-    } else {
-        Style::default()
-    };
-    let shape_block = Block::default()
-        .title("Waveform - Left/Right or drag to change")
-        .borders(Borders::ALL)
-        .style(shape_style);
-    let shape_text = match shape {
-        WaveShape::Sine => "Sine",
-        WaveShape::Square => "Square",
-        WaveShape::Triangle => "Triangle",
-        WaveShape::Sawtooth => "Sawtooth",
-    };
-    let shape_para = Paragraph::new(shape_text)
-        .block(shape_block)
-        .alignment(Alignment::Center);
-    f.render_widget(shape_para, chunks[2]);
+    // Waveform buttons - split into 4 columns for each waveform
+    let waveform_area = chunks[2];
+    let wave_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ])
+        .split(waveform_area);
+
+    render_waveform_button(f, wave_chunks[0], WaveShape::Sine, shape);
+    render_waveform_button(f, wave_chunks[1], WaveShape::Square, shape);
+    render_waveform_button(f, wave_chunks[2], WaveShape::Triangle, shape);
+    render_waveform_button(f, wave_chunks[3], WaveShape::Sawtooth, shape);
 
     // Play button
     let play_style = if state.focused_field == FocusedField::PlayButton {
@@ -453,10 +488,9 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     // Instructions
     let instructions = vec![
         Line::from("Piano: Q W E R T Y U I (Z X C V B N M)"),
-        Line::from("Controls:"),
-        Line::from("  Tab - Switch field | ↑/↓ - Adjust freq/vol"),
-        Line::from("  ←/→ - Change waveform | Space - Play button"),
-        Line::from("  q/Esc - Quit"),
+        Line::from("Waveforms: 1=Sine | Shift+1=Square | Shift+2=Triangle | Shift+3=Sawtooth"),
+        Line::from("Controls: Tab - Switch field | ↑/↓ - Adjust freq/vol"),
+        Line::from("  Space - Play button | Esc - Quit"),
     ];
     let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
     let instructions_para = Paragraph::new(instructions).block(instructions_block);
