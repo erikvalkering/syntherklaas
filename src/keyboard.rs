@@ -1,11 +1,11 @@
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use std::io;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -52,34 +52,37 @@ impl KeyboardHandler {
 
             loop {
                 if event::poll(Duration::from_millis(50)).unwrap_or(false)
-                    && let Ok(Event::Key(key_event)) = event::read() {
-                        match key_event.code {
-                            KeyCode::Char(' ') => {
-                                match key_event.kind {
-                                    event::KeyEventKind::Press => {
-                                        spacebar.store(true, Ordering::Relaxed);
-                                        last_spacebar_press = Instant::now();
-                                    }
-                                    event::KeyEventKind::Release => {
-                                        spacebar.store(false, Ordering::Relaxed);
-                                    }
-                                    _ => {}
-                                }
+                    && let Ok(Event::Key(key_event)) = event::read()
+                {
+                    match key_event.code {
+                        KeyCode::Char(' ') => match key_event.kind {
+                            event::KeyEventKind::Press => {
+                                spacebar.store(true, Ordering::Relaxed);
+                                last_spacebar_press = Instant::now();
                             }
-                            KeyCode::Char('c') if key_event.modifiers.contains(event::KeyModifiers::CONTROL) => {
-                                exit.store(true, Ordering::Relaxed);
-                                break;
-                            }
-                            KeyCode::Esc => {
-                                exit.store(true, Ordering::Relaxed);
-                                break;
+                            event::KeyEventKind::Release => {
+                                spacebar.store(false, Ordering::Relaxed);
                             }
                             _ => {}
+                        },
+                        KeyCode::Char('c')
+                            if key_event.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                        {
+                            exit.store(true, Ordering::Relaxed);
+                            break;
                         }
+                        KeyCode::Esc => {
+                            exit.store(true, Ordering::Relaxed);
+                            break;
+                        }
+                        _ => {}
                     }
+                }
 
                 // Detect key release by timeout (for systems like Termux that don't send release events)
-                if spacebar.load(Ordering::Relaxed) && last_spacebar_press.elapsed() > key_repeat_interval {
+                if spacebar.load(Ordering::Relaxed)
+                    && last_spacebar_press.elapsed() > key_repeat_interval
+                {
                     spacebar.store(false, Ordering::Relaxed);
                 }
 
@@ -101,7 +104,7 @@ impl KeyboardHandler {
         if let Some(handle) = self.keyboard_thread.take() {
             let _ = handle.join();
         }
-        
+
         disable_raw_mode()?;
         execute!(io::stdout(), LeaveAlternateScreen)?;
         Ok(())

@@ -57,11 +57,7 @@ impl Oscillator {
     }
 
     fn square(&self) -> f32 {
-        if self.phase < PI {
-            1.0
-        } else {
-            -1.0
-        }
+        if self.phase < PI { 1.0 } else { -1.0 }
     }
 
     fn triangle(&self) -> f32 {

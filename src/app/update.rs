@@ -1,7 +1,7 @@
 use super::message::Message;
 use super::state::{FocusedField, SynthState};
 use crate::waveform::WaveShape;
-use crossterm::event::{MouseEventKind, MouseEvent};
+use crossterm::event::{MouseEvent, MouseEventKind};
 use std::time::Duration;
 
 pub fn update(mut state: SynthState, msg: Message) -> SynthState {
@@ -25,46 +25,36 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
             state.volume = vol.clamp(0.0, 1.0);
         }
         Message::NextWaveform => {
-            if state.focused_field == FocusedField::Shape {
-                state.shape = match state.shape {
-                    WaveShape::Sine => WaveShape::Square,
-                    WaveShape::Square => WaveShape::Triangle,
-                    WaveShape::Triangle => WaveShape::Sawtooth,
-                    WaveShape::Sawtooth => WaveShape::Sine,
-                };
-            }
+            state.shape = match state.shape {
+                WaveShape::Sine => WaveShape::Square,
+                WaveShape::Square => WaveShape::Triangle,
+                WaveShape::Triangle => WaveShape::Sawtooth,
+                WaveShape::Sawtooth => WaveShape::Sine,
+            };
         }
         Message::PrevWaveform => {
-            if state.focused_field == FocusedField::Shape {
-                state.shape = match state.shape {
-                    WaveShape::Sine => WaveShape::Sawtooth,
-                    WaveShape::Square => WaveShape::Sine,
-                    WaveShape::Triangle => WaveShape::Square,
-                    WaveShape::Sawtooth => WaveShape::Triangle,
-                };
-            }
+            state.shape = match state.shape {
+                WaveShape::Sine => WaveShape::Sawtooth,
+                WaveShape::Square => WaveShape::Sine,
+                WaveShape::Triangle => WaveShape::Square,
+                WaveShape::Sawtooth => WaveShape::Triangle,
+            };
         }
         Message::SetWaveform(shape) => {
             state.shape = shape;
         }
         Message::PressPlayButton => {
-            if state.focused_field == FocusedField::PlayButton {
-                state.is_playing = true;
-                state.last_play_button_press = std::time::Instant::now();
-            }
+            state.is_playing = true;
+            state.last_play_button_press = std::time::Instant::now();
         }
         Message::ReleasePlayButton => {
-            if state.focused_field == FocusedField::PlayButton {
-                state.is_playing = false;
-            }
+            state.is_playing = false;
         }
         Message::TogglePlay => {
-            if state.focused_field == FocusedField::PlayToggleButton {
-                let new_state = !state.is_playing;
-                state.is_playing = new_state;
-                state.keep_playing = new_state;
-                state.last_play_button_press = std::time::Instant::now();
-            }
+            let new_state = !state.is_playing;
+            state.is_playing = new_state;
+            state.keep_playing = new_state;
+            state.last_play_button_press = std::time::Instant::now();
         }
         Message::FocusNext => {
             state.focused_field = match state.focused_field {
@@ -138,7 +128,8 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
 
             match state.focused_field {
                 FocusedField::Frequency => {
-                    state.frequency = (state.frequency + (delta as f32 * 10.0)).clamp(20.0, 20000.0);
+                    state.frequency =
+                        (state.frequency + (delta as f32 * 10.0)).clamp(20.0, 20000.0);
                 }
                 FocusedField::Volume => {
                     state.volume = (state.volume + (delta as f32 * 0.01)).clamp(0.0, 1.0);

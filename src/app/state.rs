@@ -1,7 +1,7 @@
-use crate::waveform::WaveShape;
 use crate::music::PianoKey;
-use std::time::Instant;
+use crate::waveform::WaveShape;
 use std::collections::HashSet;
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct SynthState {

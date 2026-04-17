@@ -1,5 +1,5 @@
-use crate::waveform::WaveShape;
 use crate::music::PianoKey;
+use crate::waveform::WaveShape;
 use crossterm::event::MouseEvent;
 
 #[derive(Debug, Clone)]

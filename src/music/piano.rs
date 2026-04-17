@@ -1,8 +1,37 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PianoKey {
-    C3, CSharp3, D3, DSharp3, E3, F3, FSharp3, G3, GSharp3, A3, ASharp3, B3,
-    C4, CSharp4, D4, DSharp4, E4, F4, FSharp4, G4, GSharp4, A4, ASharp4, B4,
-    C5, CSharp5, D5, DSharp5, E5, F5, FSharp5, G5,
+    C3,
+    CSharp3,
+    D3,
+    DSharp3,
+    E3,
+    F3,
+    FSharp3,
+    G3,
+    GSharp3,
+    A3,
+    ASharp3,
+    B3,
+    C4,
+    CSharp4,
+    D4,
+    DSharp4,
+    E4,
+    F4,
+    FSharp4,
+    G4,
+    GSharp4,
+    A4,
+    ASharp4,
+    B4,
+    C5,
+    CSharp5,
+    D5,
+    DSharp5,
+    E5,
+    F5,
+    FSharp5,
+    G5,
 }
 
 impl PianoKey {
@@ -22,7 +51,7 @@ impl PianoKey {
             PianoKey::A3 => -30.0,
             PianoKey::ASharp3 => -29.0,
             PianoKey::B3 => -28.0,
-            
+
             PianoKey::C4 => -27.0,
             PianoKey::CSharp4 => -26.0,
             PianoKey::D4 => -25.0,
@@ -35,7 +64,7 @@ impl PianoKey {
             PianoKey::A4 => 0.0,
             PianoKey::ASharp4 => 1.0,
             PianoKey::B4 => 2.0,
-            
+
             PianoKey::C5 => 3.0,
             PianoKey::CSharp5 => 4.0,
             PianoKey::D5 => 5.0,
@@ -45,7 +74,7 @@ impl PianoKey {
             PianoKey::FSharp5 => 9.0,
             PianoKey::G5 => 10.0,
         };
-        
+
         // Equal temperament: f = 440 * 2^(n/12)
         440.0 * 2.0_f32.powf(semitones_from_a4 / 12.0)
     }
@@ -65,7 +94,7 @@ impl PianoKey {
             PianoKey::A3 => "A3",
             PianoKey::ASharp3 => "A#3",
             PianoKey::B3 => "B3",
-            
+
             PianoKey::C4 => "C4",
             PianoKey::CSharp4 => "C#4",
             PianoKey::D4 => "D4",
@@ -78,7 +107,7 @@ impl PianoKey {
             PianoKey::A4 => "A4",
             PianoKey::ASharp4 => "A#4",
             PianoKey::B4 => "B4",
-            
+
             PianoKey::C5 => "C5",
             PianoKey::CSharp5 => "C#5",
             PianoKey::D5 => "D5",
@@ -93,9 +122,19 @@ impl PianoKey {
     /// Returns true if this is a black key (sharp/flat)
     pub fn is_black(&self) -> bool {
         match self {
-            PianoKey::CSharp3 | PianoKey::DSharp3 | PianoKey::FSharp3 | PianoKey::GSharp3 | PianoKey::ASharp3 |
-            PianoKey::CSharp4 | PianoKey::DSharp4 | PianoKey::FSharp4 | PianoKey::GSharp4 | PianoKey::ASharp4 |
-            PianoKey::CSharp5 | PianoKey::DSharp5 | PianoKey::FSharp5 => true,
+            PianoKey::CSharp3
+            | PianoKey::DSharp3
+            | PianoKey::FSharp3
+            | PianoKey::GSharp3
+            | PianoKey::ASharp3
+            | PianoKey::CSharp4
+            | PianoKey::DSharp4
+            | PianoKey::FSharp4
+            | PianoKey::GSharp4
+            | PianoKey::ASharp4
+            | PianoKey::CSharp5
+            | PianoKey::DSharp5
+            | PianoKey::FSharp5 => true,
             _ => false,
         }
     }
@@ -104,12 +143,38 @@ impl PianoKey {
 /// Get all piano keys in order
 pub fn all_keys() -> [PianoKey; 32] {
     [
-        PianoKey::C3, PianoKey::CSharp3, PianoKey::D3, PianoKey::DSharp3, PianoKey::E3,
-        PianoKey::F3, PianoKey::FSharp3, PianoKey::G3, PianoKey::GSharp3, PianoKey::A3, PianoKey::ASharp3, PianoKey::B3,
-        PianoKey::C4, PianoKey::CSharp4, PianoKey::D4, PianoKey::DSharp4, PianoKey::E4,
-        PianoKey::F4, PianoKey::FSharp4, PianoKey::G4, PianoKey::GSharp4, PianoKey::A4, PianoKey::ASharp4, PianoKey::B4,
-        PianoKey::C5, PianoKey::CSharp5, PianoKey::D5, PianoKey::DSharp5, PianoKey::E5,
-        PianoKey::F5, PianoKey::FSharp5, PianoKey::G5,
+        PianoKey::C3,
+        PianoKey::CSharp3,
+        PianoKey::D3,
+        PianoKey::DSharp3,
+        PianoKey::E3,
+        PianoKey::F3,
+        PianoKey::FSharp3,
+        PianoKey::G3,
+        PianoKey::GSharp3,
+        PianoKey::A3,
+        PianoKey::ASharp3,
+        PianoKey::B3,
+        PianoKey::C4,
+        PianoKey::CSharp4,
+        PianoKey::D4,
+        PianoKey::DSharp4,
+        PianoKey::E4,
+        PianoKey::F4,
+        PianoKey::FSharp4,
+        PianoKey::G4,
+        PianoKey::GSharp4,
+        PianoKey::A4,
+        PianoKey::ASharp4,
+        PianoKey::B4,
+        PianoKey::C5,
+        PianoKey::CSharp5,
+        PianoKey::D5,
+        PianoKey::DSharp5,
+        PianoKey::E5,
+        PianoKey::F5,
+        PianoKey::FSharp5,
+        PianoKey::G5,
     ]
 }
 
