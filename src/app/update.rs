@@ -7,27 +7,19 @@ use std::time::Duration;
 pub fn update(mut state: SynthState, msg: Message) -> SynthState {
     match msg {
         Message::IncreaseFrequency => {
-            if state.focused_field == FocusedField::Frequency {
-                state.frequency = (state.frequency + 10.0).min(20000.0);
-            }
+            state.frequency = (state.frequency + 10.0).min(20000.0);
         }
         Message::DecreaseFrequency => {
-            if state.focused_field == FocusedField::Frequency {
-                state.frequency = (state.frequency - 10.0).max(20.0);
-            }
+            state.frequency = (state.frequency - 10.0).max(20.0);
         }
         Message::SetFrequency(freq) => {
             state.frequency = freq.clamp(20.0, 20000.0);
         }
         Message::IncreaseVolume => {
-            if state.focused_field == FocusedField::Volume {
-                state.volume = (state.volume + 0.05).min(1.0);
-            }
+            state.volume = (state.volume + 0.05).min(1.0);
         }
         Message::DecreaseVolume => {
-            if state.focused_field == FocusedField::Volume {
-                state.volume = (state.volume - 0.05).max(0.0);
-            }
+            state.volume = (state.volume - 0.05).max(0.0);
         }
         Message::SetVolume(vol) => {
             state.volume = vol.clamp(0.0, 1.0);
@@ -125,10 +117,6 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
         }
     }
     state
-}
-
-fn is_in_rect(rect: ratatui::layout::Rect, x: u16, y: u16) -> bool {
-    x >= rect.left() && x < rect.right() && y >= rect.top() && y < rect.bottom()
 }
 
 pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
