@@ -44,11 +44,6 @@ pub struct PianoKey {
 }
 
 impl PianoKey {
-    /// Create a new piano key
-    pub fn new(note: Note, sharp: bool, octave: i32) -> Self {
-        PianoKey { note, sharp, octave }
-    }
-
     /// Calculate the frequency in Hz for this piano key.
     /// Uses A4 = 440 Hz as the reference.
     pub fn frequency(&self) -> f32 {
@@ -71,11 +66,6 @@ impl PianoKey {
         } else {
             format!("{}{}", self.note.as_str(), self.octave)
         }
-    }
-
-    /// Returns true if this is a black key (sharp/flat)
-    pub fn is_black(&self) -> bool {
-        self.sharp
     }
 }
 
@@ -110,20 +100,11 @@ pub fn get_key_for_octave_and_semitone(octave: i32, semitone: i32) -> Option<Pia
         return None; // After C8
     }
 
-    Some(PianoKey { note, sharp, octave })
-}
-
-/// Get all piano keys in order
-pub fn all_keys() -> Vec<PianoKey> {
-    let mut keys = Vec::new();
-    for octave in 0..=8 {
-        for semitone in 0..12 {
-            if let Some(key) = get_key_for_octave_and_semitone(octave, semitone) {
-                keys.push(key);
-            }
-        }
-    }
-    keys
+    Some(PianoKey {
+        note,
+        sharp,
+        octave,
+    })
 }
 
 #[cfg(test)]
