@@ -289,21 +289,20 @@ impl PianoKey {
 pub fn get_key_for_octave_and_semitone(octave: i32, semitone: i32) -> Option<PianoKey> {
     let semitone = semitone.rem_euclid(12) as usize;
     let octave = octave.clamp(0, 8);
-    
     // Map from semitone offset to key in that octave
     let key_name = match (octave, semitone) {
-        (0, 0) => return None, // C0 doesn't exist
-        (0, 1) => return None, // C#0 doesn't exist
-        (0, 2) => return None, // D0 doesn't exist
-        (0, 3) => return None, // D#0 doesn't exist
-        (0, 4) => return None, // E0 doesn't exist
-        (0, 5) => return None, // F0 doesn't exist
-        (0, 6) => return None, // F#0 doesn't exist
-        (0, 7) => return None, // G0 doesn't exist
-        (0, 8) => return None, // G#0 doesn't exist
-        (0, 9) => PianoKey::A0, // A0
+        (0, 0) => return None,        // C0 doesn't exist
+        (0, 1) => return None,        // C#0 doesn't exist
+        (0, 2) => return None,        // D0 doesn't exist
+        (0, 3) => return None,        // D#0 doesn't exist
+        (0, 4) => return None,        // E0 doesn't exist
+        (0, 5) => return None,        // F0 doesn't exist
+        (0, 6) => return None,        // F#0 doesn't exist
+        (0, 7) => return None,        // G0 doesn't exist
+        (0, 8) => return None,        // G#0 doesn't exist
+        (0, 9) => PianoKey::A0,       // A0
         (0, 10) => PianoKey::ASharp0, // A#0
-        (0, 11) => PianoKey::B0, // B0
+        (0, 11) => PianoKey::B0,      // B0
         (1, 0) => PianoKey::C1,
         (1, 1) => PianoKey::CSharp1,
         (1, 2) => PianoKey::D1,

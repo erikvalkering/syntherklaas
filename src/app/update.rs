@@ -1,9 +1,9 @@
 use super::message::Message;
 use super::state::{FocusedField, SynthState};
+use crate::music;
 use crate::waveform::WaveShape;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use std::time::Duration;
-use crate::music;
 
 pub fn update(mut state: SynthState, msg: Message) -> SynthState {
     match msg {
@@ -74,7 +74,9 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
             // If a key is currently pressed, update its frequency
             if let Some(_key) = state.current_piano_key {
                 let semitone_steps = state.semitone_offset;
-                if let Some(new_key) = music::get_key_for_octave_and_semitone(state.current_octave, semitone_steps) {
+                if let Some(new_key) =
+                    music::get_key_for_octave_and_semitone(state.current_octave, semitone_steps)
+                {
                     state.frequency = new_key.frequency();
                 }
             }
@@ -107,12 +109,12 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
             // Keyboard layout has white keys starting around column 4
             // Each white key is 6 characters wide (╔════╗ = 6 chars)
             // Black keys are positioned above at specific offsets
-            
+
             // Simple heuristic: if row is around line 7-8 and column matches a key position
             // Map column to semitone (0-11 for C through B)
             // Key positions: "a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"
             // Column positions approximately: 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72
-            
+
             let col = mouse.column as i32;
             let semitone = if col >= 4 && col <= 80 {
                 // Map column to semitone 0-11
@@ -125,15 +127,16 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
             } else {
                 None
             };
-            
+
             if let Some(st) = semitone {
-                if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, st) {
+                if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, st)
+                {
                     state.current_piano_key = Some(key);
                     state.frequency = key.frequency();
                     state.is_playing = true;
                 }
             }
-            
+
             state.mouse_dragging = true;
             state.mouse_start_x = mouse.column;
         }
