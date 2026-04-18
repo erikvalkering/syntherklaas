@@ -295,7 +295,7 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
                 Message::FocusNext
             }
         }
-        KeyCode::Esc => Message::Exit,
+        KeyCode::Esc | KeyCode::Char('q') => Message::Exit,
 
         _ => Message::FocusNext,
     }
