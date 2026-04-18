@@ -7,17 +7,20 @@ pub enum Message {
     // Frequency adjustments
     IncreaseFrequency,
     DecreaseFrequency,
+    #[allow(unused)]
     SetFrequency(f32),
 
     // Volume adjustments
     IncreaseVolume,
     DecreaseVolume,
+    #[allow(unused)]
     SetVolume(f32),
 
     // Waveform selection
     SetWaveform(WaveShape),
 
     // Playback control
+    #[allow(unused)]
     PressPlayButton,
     ReleasePlayButton,
     TogglePlay,
@@ -30,6 +33,7 @@ pub enum Message {
 
     // UI focus
     FocusNext,
+    #[allow(unused)]
     FocusPrev,
 
     // Timeout-based release detection
