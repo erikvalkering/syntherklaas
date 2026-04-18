@@ -166,32 +166,25 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
     use crate::music::PianoKey;
 
     // Piano keyboard mapping - using QWERTY layout
-    // Row 1: Q W E R T Y U I  (C C# D D# E F F# G)
-    // Row 2: Z X C V B N M    (G# A A# B C C# D)
+    // Row 1:  W E   T Y U  ( C# D#   F# G# A# )
+    // Row 2: A S D F G H J (C  D  E F  G  A  B)
+    // k = Octave Down
+    // L = Octave up
     match key.code {
         // Piano keys - QWERTY layout (Octave 4) - CHECK THESE FIRST!
-        KeyCode::Char('q') => Message::PianoPressKey(PianoKey::C4),
-        KeyCode::Char('2') => Message::PianoPressKey(PianoKey::CSharp4),
-        KeyCode::Char('w') => Message::PianoPressKey(PianoKey::D4),
-        KeyCode::Char('3') => Message::PianoPressKey(PianoKey::DSharp4),
-        KeyCode::Char('e') => Message::PianoPressKey(PianoKey::E4),
-        KeyCode::Char('r') => Message::PianoPressKey(PianoKey::F4),
-        KeyCode::Char('5') => Message::PianoPressKey(PianoKey::FSharp4),
-        KeyCode::Char('t') => Message::PianoPressKey(PianoKey::G4),
-        KeyCode::Char('6') => Message::PianoPressKey(PianoKey::GSharp4),
-        KeyCode::Char('y') => Message::PianoPressKey(PianoKey::A4),
-        KeyCode::Char('7') => Message::PianoPressKey(PianoKey::ASharp4),
-        KeyCode::Char('u') => Message::PianoPressKey(PianoKey::B4),
-        KeyCode::Char('i') => Message::PianoPressKey(PianoKey::C5),
+        KeyCode::Char('a') => Message::PianoPressKey(PianoKey::C4),
+        KeyCode::Char('w') => Message::PianoPressKey(PianoKey::CSharp4),
+        KeyCode::Char('s') => Message::PianoPressKey(PianoKey::D4),
+        KeyCode::Char('e') => Message::PianoPressKey(PianoKey::DSharp4),
+        KeyCode::Char('d') => Message::PianoPressKey(PianoKey::E4),
 
-        // Alt row: Z X C V B N M (G3 and higher octave)
-        KeyCode::Char('z') => Message::PianoPressKey(PianoKey::G3),
-        KeyCode::Char('x') => Message::PianoPressKey(PianoKey::GSharp3),
-        KeyCode::Char('c') => Message::PianoPressKey(PianoKey::A3),
-        KeyCode::Char('v') => Message::PianoPressKey(PianoKey::ASharp3),
-        KeyCode::Char('b') => Message::PianoPressKey(PianoKey::B3),
-        KeyCode::Char('n') => Message::PianoPressKey(PianoKey::C4),
-        KeyCode::Char('m') => Message::PianoPressKey(PianoKey::CSharp4),
+        KeyCode::Char('f') => Message::PianoPressKey(PianoKey::F4),
+        KeyCode::Char('t') => Message::PianoPressKey(PianoKey::FSharp4),
+        KeyCode::Char('g') => Message::PianoPressKey(PianoKey::G4),
+        KeyCode::Char('y') => Message::PianoPressKey(PianoKey::GSharp4),
+        KeyCode::Char('h') => Message::PianoPressKey(PianoKey::A4),
+        KeyCode::Char('u') => Message::PianoPressKey(PianoKey::ASharp4),
+        KeyCode::Char('j') => Message::PianoPressKey(PianoKey::B4),
 
         // Waveform selection
         KeyCode::Char('1') => Message::SetWaveform(WaveShape::Sine),
