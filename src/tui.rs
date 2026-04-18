@@ -321,36 +321,62 @@ fn key_to_release_message(key: KeyEvent) -> Option<Message> {
 }
 
 fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &SynthState) {
-    use crate::music::PianoKey;
-
-    if area.height < 2 {
+    if area.height < 3 {
         return;
     }
 
     let block = Block::default()
-        .title("Piano Keyboard (a-j, octave: k/l, semitone: o/p)")
+        .title("Piano (a-j keys, k/l octave, o/p semitone)")
         .borders(Borders::ALL);
 
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if inner.height < 1 {
-        return;
-    }
-
-    // Display piano keys - show which one is currently pressed
-    let mut key_display = String::new();
-    key_display.push_str(&format!("Octave: {}  ", state.current_octave));
-    key_display.push_str(&format!("Semitone offset: {}  ", state.semitone_offset));
-
+    // Top row: status info
+    let mut display_text = format!("Octave: {}  Semitone offset: {}  ", state.current_octave, state.semitone_offset);
     if let Some(key) = state.current_piano_key {
-        key_display.push_str(&format!("Playing: [{}]", key.name()));
+        display_text.push_str(&format!("Playing: [{}] @ {:.1}Hz", key.name(), key.frequency()));
     } else {
-        key_display.push_str("Playing: (none)");
+        display_text.push_str("Playing: (none)");
     }
 
-    let para = Paragraph::new(key_display).alignment(Alignment::Center);
-    f.render_widget(para, inner);
+    let para = Paragraph::new(display_text);
+    let mut status_area = inner;
+    status_area.height = 1;
+    f.render_widget(para, status_area);
+
+    // Draw visual keyboard (simplified: show notes a-j as C-B in current octave)
+    if inner.height > 1 {
+        let mut keyboard_display = String::new();
+        keyboard_display.push_str("Keys:  ");
+        
+        let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        let key_chars = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j'];
+        
+        for (i, (_note, &key_char)) in notes.iter().zip(key_chars.iter()).enumerate() {
+            if let Some(current_key) = state.current_piano_key {
+                let current_semitone = if let Some(pos) = notes.iter().position(|&n| n == current_key.name().trim_end_matches(char::is_numeric)) {
+                    pos
+                } else {
+                    999
+                };
+                if i == current_semitone {
+                    keyboard_display.push_str(&format!("[{}]", key_char));
+                } else {
+                    keyboard_display.push_str(&format!(" {} ", key_char));
+                }
+            } else {
+                keyboard_display.push_str(&format!(" {} ", key_char));
+            }
+        }
+        
+        let mut keyboard_area = inner;
+        keyboard_area.y += 1;
+        keyboard_area.height = keyboard_area.height.saturating_sub(1);
+        
+        let keyboard_para = Paragraph::new(keyboard_display).alignment(Alignment::Left);
+        f.render_widget(keyboard_para, keyboard_area);
+    }
 }
 
 fn render_waveform_button(
