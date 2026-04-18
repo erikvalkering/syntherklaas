@@ -1,286 +1,81 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum PianoKey {
-    A0,
-    ASharp0,
-    B0,
-    C1,
-    CSharp1,
-    D1,
-    DSharp1,
-    E1,
-    F1,
-    FSharp1,
-    G1,
-    GSharp1,
-    A1,
-    ASharp1,
-    B1,
-    C2,
-    CSharp2,
-    D2,
-    DSharp2,
-    E2,
-    F2,
-    FSharp2,
-    G2,
-    GSharp2,
-    A2,
-    ASharp2,
-    B2,
-    C3,
-    CSharp3,
-    D3,
-    DSharp3,
-    E3,
-    F3,
-    FSharp3,
-    G3,
-    GSharp3,
-    A3,
-    ASharp3,
-    B3,
-    C4,
-    CSharp4,
-    D4,
-    DSharp4,
-    E4,
-    F4,
-    FSharp4,
-    G4,
-    GSharp4,
-    A4,
-    ASharp4,
-    B4,
-    C5,
-    CSharp5,
-    D5,
-    DSharp5,
-    E5,
-    F5,
-    FSharp5,
-    G5,
-    GSharp5,
-    A5,
-    ASharp5,
-    B5,
-    C6,
-    CSharp6,
-    D6,
-    DSharp6,
-    E6,
-    F6,
-    FSharp6,
-    G6,
-    GSharp6,
-    A6,
-    ASharp6,
-    B6,
-    C7,
-    CSharp7,
-    D7,
-    DSharp7,
-    E7,
-    F7,
-    FSharp7,
-    G7,
-    GSharp7,
-    A7,
-    ASharp7,
-    B7,
-    C8,
+pub enum Note {
+    C,
+    D,
+    E,
+    F,
+    G,
+    A,
+    B,
+}
+
+impl Note {
+    /// Get the semitone offset from C within an octave (0-11)
+    pub fn semitone_in_octave(&self) -> i32 {
+        match self {
+            Note::C => 0,
+            Note::D => 2,
+            Note::E => 4,
+            Note::F => 5,
+            Note::G => 7,
+            Note::A => 9,
+            Note::B => 11,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Note::C => "C",
+            Note::D => "D",
+            Note::E => "E",
+            Note::F => "F",
+            Note::G => "G",
+            Note::A => "A",
+            Note::B => "B",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PianoKey {
+    pub note: Note,
+    pub sharp: bool,
+    pub octave: i32,
 }
 
 impl PianoKey {
+    /// Create a new piano key
+    pub fn new(note: Note, sharp: bool, octave: i32) -> Self {
+        PianoKey { note, sharp, octave }
+    }
+
     /// Calculate the frequency in Hz for this piano key.
     /// Uses A4 = 440 Hz as the reference.
     pub fn frequency(&self) -> f32 {
-        let semitones_from_a4 = match self {
-            PianoKey::A0 => -48.0,
-            PianoKey::ASharp0 => -47.0,
-            PianoKey::B0 => -46.0,
-            PianoKey::C1 => -45.0,
-            PianoKey::CSharp1 => -44.0,
-            PianoKey::D1 => -43.0,
-            PianoKey::DSharp1 => -42.0,
-            PianoKey::E1 => -41.0,
-            PianoKey::F1 => -40.0,
-            PianoKey::FSharp1 => -39.0,
-            PianoKey::G1 => -38.0,
-            PianoKey::GSharp1 => -37.0,
-            PianoKey::A1 => -36.0,
-            PianoKey::ASharp1 => -35.0,
-            PianoKey::B1 => -34.0,
-            PianoKey::C2 => -33.0,
-            PianoKey::CSharp2 => -32.0,
-            PianoKey::D2 => -31.0,
-            PianoKey::DSharp2 => -30.0,
-            PianoKey::E2 => -29.0,
-            PianoKey::F2 => -28.0,
-            PianoKey::FSharp2 => -27.0,
-            PianoKey::G2 => -26.0,
-            PianoKey::GSharp2 => -25.0,
-            PianoKey::A2 => -24.0,
-            PianoKey::ASharp2 => -23.0,
-            PianoKey::B2 => -22.0,
-            PianoKey::C3 => -21.0,
-            PianoKey::CSharp3 => -20.0,
-            PianoKey::D3 => -19.0,
-            PianoKey::DSharp3 => -18.0,
-            PianoKey::E3 => -17.0,
-            PianoKey::F3 => -16.0,
-            PianoKey::FSharp3 => -15.0,
-            PianoKey::G3 => -14.0,
-            PianoKey::GSharp3 => -13.0,
-            PianoKey::A3 => -12.0,
-            PianoKey::ASharp3 => -11.0,
-            PianoKey::B3 => -10.0,
-            PianoKey::C4 => -9.0,
-            PianoKey::CSharp4 => -8.0,
-            PianoKey::D4 => -7.0,
-            PianoKey::DSharp4 => -6.0,
-            PianoKey::E4 => -5.0,
-            PianoKey::F4 => -4.0,
-            PianoKey::FSharp4 => -3.0,
-            PianoKey::G4 => -2.0,
-            PianoKey::GSharp4 => -1.0,
-            PianoKey::A4 => 0.0,
-            PianoKey::ASharp4 => 1.0,
-            PianoKey::B4 => 2.0,
-            PianoKey::C5 => 3.0,
-            PianoKey::CSharp5 => 4.0,
-            PianoKey::D5 => 5.0,
-            PianoKey::DSharp5 => 6.0,
-            PianoKey::E5 => 7.0,
-            PianoKey::F5 => 8.0,
-            PianoKey::FSharp5 => 9.0,
-            PianoKey::G5 => 10.0,
-            PianoKey::GSharp5 => 11.0,
-            PianoKey::A5 => 12.0,
-            PianoKey::ASharp5 => 13.0,
-            PianoKey::B5 => 14.0,
-            PianoKey::C6 => 15.0,
-            PianoKey::CSharp6 => 16.0,
-            PianoKey::D6 => 17.0,
-            PianoKey::DSharp6 => 18.0,
-            PianoKey::E6 => 19.0,
-            PianoKey::F6 => 20.0,
-            PianoKey::FSharp6 => 21.0,
-            PianoKey::G6 => 22.0,
-            PianoKey::GSharp6 => 23.0,
-            PianoKey::A6 => 24.0,
-            PianoKey::ASharp6 => 25.0,
-            PianoKey::B6 => 26.0,
-            PianoKey::C7 => 27.0,
-            PianoKey::CSharp7 => 28.0,
-            PianoKey::D7 => 29.0,
-            PianoKey::DSharp7 => 30.0,
-            PianoKey::E7 => 31.0,
-            PianoKey::F7 => 32.0,
-            PianoKey::FSharp7 => 33.0,
-            PianoKey::G7 => 34.0,
-            PianoKey::GSharp7 => 35.0,
-            PianoKey::A7 => 36.0,
-            PianoKey::ASharp7 => 37.0,
-            PianoKey::B7 => 38.0,
-            PianoKey::C8 => 39.0,
-        };
+        // Calculate semitones from A4
+        // C4 is 9 semitones below A4
+        let octave_offset = (self.octave - 4) * 12;
+        let note_offset = self.note.semitone_in_octave();
+        let sharp_offset = if self.sharp { 1 } else { 0 };
+        let semitones_from_c4 = note_offset + sharp_offset;
+        let semitones_from_a4 = octave_offset + semitones_from_c4 - 9;
 
         // Equal temperament: f = 440 * 2^(n/12)
-        440.0 * 2.0_f32.powf(semitones_from_a4 / 12.0)
+        440.0 * 2.0_f32.powf(semitones_from_a4 as f32 / 12.0)
     }
 
     /// Get the name of this note for display
-    pub fn name(&self) -> &'static str {
-        match self {
-            PianoKey::A0 => "A0",
-            PianoKey::ASharp0 => "A#0",
-            PianoKey::B0 => "B0",
-            PianoKey::C1 => "C1",
-            PianoKey::CSharp1 => "C#1",
-            PianoKey::D1 => "D1",
-            PianoKey::DSharp1 => "D#1",
-            PianoKey::E1 => "E1",
-            PianoKey::F1 => "F1",
-            PianoKey::FSharp1 => "F#1",
-            PianoKey::G1 => "G1",
-            PianoKey::GSharp1 => "G#1",
-            PianoKey::A1 => "A1",
-            PianoKey::ASharp1 => "A#1",
-            PianoKey::B1 => "B1",
-            PianoKey::C2 => "C2",
-            PianoKey::CSharp2 => "C#2",
-            PianoKey::D2 => "D2",
-            PianoKey::DSharp2 => "D#2",
-            PianoKey::E2 => "E2",
-            PianoKey::F2 => "F2",
-            PianoKey::FSharp2 => "F#2",
-            PianoKey::G2 => "G2",
-            PianoKey::GSharp2 => "G#2",
-            PianoKey::A2 => "A2",
-            PianoKey::ASharp2 => "A#2",
-            PianoKey::B2 => "B2",
-            PianoKey::C3 => "C3",
-            PianoKey::CSharp3 => "C#3",
-            PianoKey::D3 => "D3",
-            PianoKey::DSharp3 => "D#3",
-            PianoKey::E3 => "E3",
-            PianoKey::F3 => "F3",
-            PianoKey::FSharp3 => "F#3",
-            PianoKey::G3 => "G3",
-            PianoKey::GSharp3 => "G#3",
-            PianoKey::A3 => "A3",
-            PianoKey::ASharp3 => "A#3",
-            PianoKey::B3 => "B3",
-            PianoKey::C4 => "C4",
-            PianoKey::CSharp4 => "C#4",
-            PianoKey::D4 => "D4",
-            PianoKey::DSharp4 => "D#4",
-            PianoKey::E4 => "E4",
-            PianoKey::F4 => "F4",
-            PianoKey::FSharp4 => "F#4",
-            PianoKey::G4 => "G4",
-            PianoKey::GSharp4 => "G#4",
-            PianoKey::A4 => "A4",
-            PianoKey::ASharp4 => "A#4",
-            PianoKey::B4 => "B4",
-            PianoKey::C5 => "C5",
-            PianoKey::CSharp5 => "C#5",
-            PianoKey::D5 => "D5",
-            PianoKey::DSharp5 => "D#5",
-            PianoKey::E5 => "E5",
-            PianoKey::F5 => "F5",
-            PianoKey::FSharp5 => "F#5",
-            PianoKey::G5 => "G5",
-            PianoKey::GSharp5 => "G#5",
-            PianoKey::A5 => "A5",
-            PianoKey::ASharp5 => "A#5",
-            PianoKey::B5 => "B5",
-            PianoKey::C6 => "C6",
-            PianoKey::CSharp6 => "C#6",
-            PianoKey::D6 => "D6",
-            PianoKey::DSharp6 => "D#6",
-            PianoKey::E6 => "E6",
-            PianoKey::F6 => "F6",
-            PianoKey::FSharp6 => "F#6",
-            PianoKey::G6 => "G6",
-            PianoKey::GSharp6 => "G#6",
-            PianoKey::A6 => "A6",
-            PianoKey::ASharp6 => "A#6",
-            PianoKey::B6 => "B6",
-            PianoKey::C7 => "C7",
-            PianoKey::CSharp7 => "C#7",
-            PianoKey::D7 => "D7",
-            PianoKey::DSharp7 => "D#7",
-            PianoKey::E7 => "E7",
-            PianoKey::F7 => "F7",
-            PianoKey::FSharp7 => "F#7",
-            PianoKey::G7 => "G7",
-            PianoKey::GSharp7 => "G#7",
-            PianoKey::A7 => "A7",
-            PianoKey::ASharp7 => "A#7",
-            PianoKey::B7 => "B7",
-            PianoKey::C8 => "C8",
+    pub fn name(&self) -> String {
+        if self.sharp {
+            format!("{}#{}", self.note.as_str(), self.octave)
+        } else {
+            format!("{}{}", self.note.as_str(), self.octave)
         }
+    }
+
+    /// Returns true if this is a black key (sharp/flat)
+    pub fn is_black(&self) -> bool {
+        self.sharp
     }
 }
 
@@ -289,108 +84,46 @@ impl PianoKey {
 pub fn get_key_for_octave_and_semitone(octave: i32, semitone: i32) -> Option<PianoKey> {
     let semitone = semitone.rem_euclid(12) as usize;
     let octave = octave.clamp(0, 8);
-    // Map from semitone offset to key in that octave
-    let key_name = match (octave, semitone) {
-        (0, 0) => return None,        // C0 doesn't exist
-        (0, 1) => return None,        // C#0 doesn't exist
-        (0, 2) => return None,        // D0 doesn't exist
-        (0, 3) => return None,        // D#0 doesn't exist
-        (0, 4) => return None,        // E0 doesn't exist
-        (0, 5) => return None,        // F0 doesn't exist
-        (0, 6) => return None,        // F#0 doesn't exist
-        (0, 7) => return None,        // G0 doesn't exist
-        (0, 8) => return None,        // G#0 doesn't exist
-        (0, 9) => PianoKey::A0,       // A0
-        (0, 10) => PianoKey::ASharp0, // A#0
-        (0, 11) => PianoKey::B0,      // B0
-        (1, 0) => PianoKey::C1,
-        (1, 1) => PianoKey::CSharp1,
-        (1, 2) => PianoKey::D1,
-        (1, 3) => PianoKey::DSharp1,
-        (1, 4) => PianoKey::E1,
-        (1, 5) => PianoKey::F1,
-        (1, 6) => PianoKey::FSharp1,
-        (1, 7) => PianoKey::G1,
-        (1, 8) => PianoKey::GSharp1,
-        (1, 9) => PianoKey::A1,
-        (1, 10) => PianoKey::ASharp1,
-        (1, 11) => PianoKey::B1,
-        (2, 0) => PianoKey::C2,
-        (2, 1) => PianoKey::CSharp2,
-        (2, 2) => PianoKey::D2,
-        (2, 3) => PianoKey::DSharp2,
-        (2, 4) => PianoKey::E2,
-        (2, 5) => PianoKey::F2,
-        (2, 6) => PianoKey::FSharp2,
-        (2, 7) => PianoKey::G2,
-        (2, 8) => PianoKey::GSharp2,
-        (2, 9) => PianoKey::A2,
-        (2, 10) => PianoKey::ASharp2,
-        (2, 11) => PianoKey::B2,
-        (3, 0) => PianoKey::C3,
-        (3, 1) => PianoKey::CSharp3,
-        (3, 2) => PianoKey::D3,
-        (3, 3) => PianoKey::DSharp3,
-        (3, 4) => PianoKey::E3,
-        (3, 5) => PianoKey::F3,
-        (3, 6) => PianoKey::FSharp3,
-        (3, 7) => PianoKey::G3,
-        (3, 8) => PianoKey::GSharp3,
-        (3, 9) => PianoKey::A3,
-        (3, 10) => PianoKey::ASharp3,
-        (3, 11) => PianoKey::B3,
-        (4, 0) => PianoKey::C4,
-        (4, 1) => PianoKey::CSharp4,
-        (4, 2) => PianoKey::D4,
-        (4, 3) => PianoKey::DSharp4,
-        (4, 4) => PianoKey::E4,
-        (4, 5) => PianoKey::F4,
-        (4, 6) => PianoKey::FSharp4,
-        (4, 7) => PianoKey::G4,
-        (4, 8) => PianoKey::GSharp4,
-        (4, 9) => PianoKey::A4,
-        (4, 10) => PianoKey::ASharp4,
-        (4, 11) => PianoKey::B4,
-        (5, 0) => PianoKey::C5,
-        (5, 1) => PianoKey::CSharp5,
-        (5, 2) => PianoKey::D5,
-        (5, 3) => PianoKey::DSharp5,
-        (5, 4) => PianoKey::E5,
-        (5, 5) => PianoKey::F5,
-        (5, 6) => PianoKey::FSharp5,
-        (5, 7) => PianoKey::G5,
-        (5, 8) => PianoKey::GSharp5,
-        (5, 9) => PianoKey::A5,
-        (5, 10) => PianoKey::ASharp5,
-        (5, 11) => PianoKey::B5,
-        (6, 0) => PianoKey::C6,
-        (6, 1) => PianoKey::CSharp6,
-        (6, 2) => PianoKey::D6,
-        (6, 3) => PianoKey::DSharp6,
-        (6, 4) => PianoKey::E6,
-        (6, 5) => PianoKey::F6,
-        (6, 6) => PianoKey::FSharp6,
-        (6, 7) => PianoKey::G6,
-        (6, 8) => PianoKey::GSharp6,
-        (6, 9) => PianoKey::A6,
-        (6, 10) => PianoKey::ASharp6,
-        (6, 11) => PianoKey::B6,
-        (7, 0) => PianoKey::C7,
-        (7, 1) => PianoKey::CSharp7,
-        (7, 2) => PianoKey::D7,
-        (7, 3) => PianoKey::DSharp7,
-        (7, 4) => PianoKey::E7,
-        (7, 5) => PianoKey::F7,
-        (7, 6) => PianoKey::FSharp7,
-        (7, 7) => PianoKey::G7,
-        (7, 8) => PianoKey::GSharp7,
-        (7, 9) => PianoKey::A7,
-        (7, 10) => PianoKey::ASharp7,
-        (7, 11) => PianoKey::B7,
-        (8, 0) => PianoKey::C8,
+
+    // Map semitone to note and sharp
+    let (note, sharp) = match semitone {
+        0 => (Note::C, false),
+        1 => (Note::C, true),
+        2 => (Note::D, false),
+        3 => (Note::D, true),
+        4 => (Note::E, false),
+        5 => (Note::F, false),
+        6 => (Note::F, true),
+        7 => (Note::G, false),
+        8 => (Note::G, true),
+        9 => (Note::A, false),
+        10 => (Note::A, true),
+        11 => (Note::B, false),
         _ => return None,
     };
-    Some(key_name)
+
+    // Check bounds for grand piano (A0-C8)
+    if octave == 0 && semitone < 9 {
+        return None; // Before A0
+    }
+    if octave == 8 && semitone != 0 {
+        return None; // After C8
+    }
+
+    Some(PianoKey { note, sharp, octave })
+}
+
+/// Get all piano keys in order
+pub fn all_keys() -> Vec<PianoKey> {
+    let mut keys = Vec::new();
+    for octave in 0..=8 {
+        for semitone in 0..12 {
+            if let Some(key) = get_key_for_octave_and_semitone(octave, semitone) {
+                keys.push(key);
+            }
+        }
+    }
+    keys
 }
 
 #[cfg(test)]
@@ -399,13 +132,22 @@ mod tests {
 
     #[test]
     fn test_a4_frequency() {
-        assert!((PianoKey::A4.frequency() - 440.0).abs() < 0.1);
+        let a4 = PianoKey::new(Note::A, false, 4);
+        assert!((a4.frequency() - 440.0).abs() < 0.1);
     }
 
     #[test]
     fn test_octave_doubling() {
-        let c4_freq = PianoKey::C4.frequency();
-        let c5_freq = PianoKey::C5.frequency();
-        assert!((c5_freq / c4_freq - 2.0).abs() < 0.01);
+        let c4 = PianoKey::new(Note::C, false, 4);
+        let c5 = PianoKey::new(Note::C, false, 5);
+        assert!((c5.frequency() / c4.frequency() - 2.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_key_name() {
+        let c_sharp = PianoKey::new(Note::C, true, 4);
+        assert_eq!(c_sharp.name(), "C#4");
+        let a = PianoKey::new(Note::A, false, 4);
+        assert_eq!(a.name(), "A4");
     }
 }
