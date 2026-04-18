@@ -178,7 +178,6 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
                         };
                     }
                 }
-                _ => {}
             }
         }
         MouseEventKind::ScrollUp => match state.focused_field {
