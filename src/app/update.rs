@@ -103,13 +103,48 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
 }
 
 pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
+    use crate::music;
+
     match mouse.kind {
         MouseEventKind::Down(_) => {
+            // Check if click is on piano keyboard and convert to key
+            // Keyboard layout has white keys starting around column 4
+            // Each white key is 6 characters wide (╔════╗ = 6 chars)
+            // Black keys are positioned above at specific offsets
+            
+            // Simple heuristic: if row is around line 7-8 and column matches a key position
+            // Map column to semitone (0-11 for C through B)
+            // Key positions: "a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"
+            // Column positions approximately: 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72
+            
+            let col = mouse.column as i32;
+            let semitone = if col >= 4 && col <= 80 {
+                // Map column to semitone 0-11
+                let relative_col = (col - 4) / 6;
+                if relative_col >= 0 && relative_col < 12 {
+                    Some(relative_col as i32)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            
+            if let Some(st) = semitone {
+                if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, st) {
+                    state.current_piano_key = Some(key);
+                    state.frequency = key.frequency();
+                    state.is_playing = true;
+                }
+            }
+            
             state.mouse_dragging = true;
             state.mouse_start_x = mouse.column;
         }
         MouseEventKind::Up(_) => {
             state.mouse_dragging = false;
+            state.current_piano_key = None;
+            state.is_playing = false;
         }
         MouseEventKind::Drag(_) => {
             if !state.mouse_dragging {

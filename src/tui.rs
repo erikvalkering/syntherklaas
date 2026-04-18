@@ -321,12 +321,12 @@ fn key_to_release_message(key: KeyEvent) -> Option<Message> {
 }
 
 fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &SynthState) {
-    if area.height < 3 {
+    if area.height < 4 {
         return;
     }
 
     let block = Block::default()
-        .title("Piano (a-j keys, k/l octave, o/p semitone)")
+        .title("Piano Keyboard - Click keys or use a-j, k/l, o/p")
         .borders(Borders::ALL);
 
     let inner = block.inner(area);
@@ -345,30 +345,20 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
     status_area.height = 1;
     f.render_widget(para, status_area);
 
-    // Draw visual keyboard (simplified: show notes a-j as C-B in current octave)
-    if inner.height > 1 {
+    // Middle rows: visual keyboard with black and white keys
+    if inner.height > 3 {
         let mut keyboard_display = String::new();
-        keyboard_display.push_str("Keys:  ");
         
-        let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        let key_chars = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j'];
+        // Draw black keys on first line (upper row)
+        keyboard_display.push_str("      ╔═╗   ╔═╗       ╔═╗   ╔═╗   ╔═╗       ╔═╗   ╔═╗\n");
+        keyboard_display.push_str("      ║#║   ║#║       ║#║   ║#║   ║#║       ║#║   ║#║\n");
+        keyboard_display.push_str("      ╚═╝   ╚═╝       ╚═╝   ╚═╝   ╚═╝       ╚═╝   ╚═╝\n");
         
-        for (i, (_note, &key_char)) in notes.iter().zip(key_chars.iter()).enumerate() {
-            if let Some(current_key) = state.current_piano_key {
-                let current_semitone = if let Some(pos) = notes.iter().position(|&n| n == current_key.name().trim_end_matches(char::is_numeric)) {
-                    pos
-                } else {
-                    999
-                };
-                if i == current_semitone {
-                    keyboard_display.push_str(&format!("[{}]", key_char));
-                } else {
-                    keyboard_display.push_str(&format!(" {} ", key_char));
-                }
-            } else {
-                keyboard_display.push_str(&format!(" {} ", key_char));
-            }
-        }
+        // Draw white keys on second line (lower row)
+        keyboard_display.push_str("    ╔════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╗\n");
+        keyboard_display.push_str("    ║ a  ║ w  ║ s  ║ e  ║ d  ║ f  ║ t  ║ g  ║ y  ║ h  ║ u  ║ j  ║\n");
+        keyboard_display.push_str("    ║ C  ║ D  ║ E  ║ F  ║ G  ║ A  ║ B  ║ C  ║ D  ║ E  ║ F  ║ G  ║\n");
+        keyboard_display.push_str("    ╚════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╝");
         
         let mut keyboard_area = inner;
         keyboard_area.y += 1;
