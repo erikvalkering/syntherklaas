@@ -535,5 +535,5 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .block(logo_block)
         .centered()
         .style(Color::Red);
-    f.render_widget(logo_para, chunks[7]);
+    f.render_widget(logo_para, chunks[5]);
 }
