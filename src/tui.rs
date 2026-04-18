@@ -7,6 +7,7 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
+use ratatui::style::Styled;
 use ratatui::{
     Frame, Terminal,
     backend::CrosstermBackend,
@@ -451,6 +452,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
             Constraint::Length(3),
             Constraint::Length(15),
             Constraint::Min(1),
+            Constraint::Max(16),
         ])
         .split(f.size());
 
@@ -564,7 +566,30 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         Line::from("Controls: Tab - Switch field | ↑/↓ - Adjust freq/vol"),
         Line::from("  Space - Play button | Esc - Quit"),
     ];
+
     let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
     let instructions_para = Paragraph::new(instructions).block(instructions_block);
     f.render_widget(instructions_para, chunks[6]);
+
+    let logo = String::from(
+        "
+███████╗██╗   ██╗███╗   ██╗████████╗██╗  ██╗███████╗██████╗ 
+██╔════╝╚██╗ ██╔╝████╗  ██║╚══██╔══╝██║  ██║██╔════╝██╔══██╗
+███████╗ ╚████╔╝ ██╔██╗ ██║   ██║   ███████║█████╗  ██████╔╝
+╚════██║  ╚██╔╝  ██║╚██╗██║   ██║   ██╔══██║██╔══╝  ██╔══██╗
+███████║   ██║   ██║ ╚████║   ██║   ██║  ██║███████╗██║  ██║
+╚══════╝   ╚═╝   ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+██╗  ██╗██╗      █████╗  █████╗ ███████╗
+██║ ██╔╝██║     ██╔══██╗██╔══██╗██╔════╝
+█████╔╝ ██║     ███████║███████║███████╗
+██╔═██╗ ██║     ██╔══██║██╔══██║╚════██║
+██║  ██╗███████╗██║  ██║██║  ██║███████║
+╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝",
+    );
+    let logo_block = Block::default().borders(Borders::ALL);
+    let logo_para = Paragraph::new(logo)
+        .block(logo_block)
+        .centered()
+        .style(Color::Red);
+    f.render_widget(logo_para, chunks[7]);
 }
