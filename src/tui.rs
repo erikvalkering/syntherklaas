@@ -195,9 +195,9 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
 
         // Waveform selection
         KeyCode::Char('1') => Message::SetWaveform(WaveShape::Sine),
-        KeyCode::Char('!') => Message::SetWaveform(WaveShape::Square),  // Shift+1
-        KeyCode::Char('@') => Message::SetWaveform(WaveShape::Triangle),  // Shift+2
-        KeyCode::Char('#') => Message::SetWaveform(WaveShape::Sawtooth),  // Shift+3
+        KeyCode::Char('2') => Message::SetWaveform(WaveShape::Square),
+        KeyCode::Char('3') => Message::SetWaveform(WaveShape::Triangle),
+        KeyCode::Char('4') => Message::SetWaveform(WaveShape::Sawtooth),
 
         // UI controls
         KeyCode::Tab => Message::FocusNext,
@@ -510,7 +510,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     // Instructions
     let instructions = vec![
         Line::from("Piano: Q W E R T Y U I (Z X C V B N M)"),
-        Line::from("Waveforms: 1=Sine | Shift+1=Square | Shift+2=Triangle | Shift+3=Sawtooth"),
+        Line::from("Waveforms: 1=Sine | 2=Square | 3=Triangle | 4=Sawtooth"),
         Line::from("Controls: Tab - Switch field | ↑/↓ - Adjust freq/vol"),
         Line::from("  Space - Play button | Esc - Quit"),
     ];
