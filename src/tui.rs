@@ -333,9 +333,16 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
     f.render_widget(block, area);
 
     // Top row: status info
-    let mut display_text = format!("Octave: {}  Semitone offset: {}  ", state.current_octave, state.semitone_offset);
+    let mut display_text = format!(
+        "Octave: {}  Semitone offset: {}  ",
+        state.current_octave, state.semitone_offset
+    );
     if let Some(key) = state.current_piano_key {
-        display_text.push_str(&format!("Playing: [{}] @ {:.1}Hz", key.name(), key.frequency()));
+        display_text.push_str(&format!(
+            "Playing: [{}] @ {:.1}Hz",
+            key.name(),
+            key.frequency()
+        ));
     } else {
         display_text.push_str("Playing: (none)");
     }
@@ -348,22 +355,26 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
     // Middle rows: visual keyboard with black and white keys
     if inner.height > 3 {
         let mut keyboard_display = String::new();
-        
+
         // Draw black keys on first line (upper row)
         keyboard_display.push_str("      ╔═╗   ╔═╗       ╔═╗   ╔═╗   ╔═╗       ╔═╗   ╔═╗\n");
         keyboard_display.push_str("      ║#║   ║#║       ║#║   ║#║   ║#║       ║#║   ║#║\n");
         keyboard_display.push_str("      ╚═╝   ╚═╝       ╚═╝   ╚═╝   ╚═╝       ╚═╝   ╚═╝\n");
-        
+
         // Draw white keys on second line (lower row)
-        keyboard_display.push_str("    ╔════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╗\n");
-        keyboard_display.push_str("    ║ a  ║ w  ║ s  ║ e  ║ d  ║ f  ║ t  ║ g  ║ y  ║ h  ║ u  ║ j  ║\n");
-        keyboard_display.push_str("    ║ C  ║ D  ║ E  ║ F  ║ G  ║ A  ║ B  ║ C  ║ D  ║ E  ║ F  ║ G  ║\n");
-        keyboard_display.push_str("    ╚════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╝");
-        
+        keyboard_display
+            .push_str("    ╔════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╗\n");
+        keyboard_display
+            .push_str("    ║ a  ║ w  ║ s  ║ e  ║ d  ║ f  ║ t  ║ g  ║ y  ║ h  ║ u  ║ j  ║\n");
+        keyboard_display
+            .push_str("    ║ C  ║ D  ║ E  ║ F  ║ G  ║ A  ║ B  ║ C  ║ D  ║ E  ║ F  ║ G  ║\n");
+        keyboard_display
+            .push_str("    ╚════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╝");
+
         let mut keyboard_area = inner;
         keyboard_area.y += 1;
         keyboard_area.height = keyboard_area.height.saturating_sub(1);
-        
+
         let keyboard_para = Paragraph::new(keyboard_display).alignment(Alignment::Left);
         f.render_widget(keyboard_para, keyboard_area);
     }
@@ -442,7 +453,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
             Constraint::Length(5),
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Length(5),
+            Constraint::Length(15),
             Constraint::Min(1),
         ])
         .split(f.size());
