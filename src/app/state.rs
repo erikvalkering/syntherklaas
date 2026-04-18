@@ -1,6 +1,5 @@
 use crate::music::PianoKey;
 use crate::waveform::WaveShape;
-use std::collections::HashSet;
 use std::time::Instant;
 
 #[derive(Debug, Clone)]
@@ -15,7 +14,10 @@ pub struct SynthState {
     pub last_play_button_press: Instant,
     pub mouse_dragging: bool,
     pub mouse_start_x: u16,
-    pub piano_active_keys: HashSet<PianoKey>,
+    // Monophonic piano: track single key and octave/semitone offsets
+    pub current_piano_key: Option<PianoKey>,
+    pub current_octave: i32,
+    pub semitone_offset: i32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,7 +42,9 @@ impl SynthState {
             last_play_button_press: Instant::now(),
             mouse_dragging: false,
             mouse_start_x: 0,
-            piano_active_keys: HashSet::new(),
+            current_piano_key: None,
+            current_octave: 4,
+            semitone_offset: 0,
         }
     }
 }

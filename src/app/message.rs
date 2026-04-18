@@ -22,9 +22,11 @@ pub enum Message {
     ReleasePlayButton,
     TogglePlay,
 
-    // Piano control
-    PianoPressKey(PianoKey),
-    PianoReleaseKey(PianoKey),
+    // Piano control - monophonic
+    KeyboardKeyDown(Option<PianoKey>),
+    KeyboardKeyUp,
+    ChangeOctave(i32),
+    ChangeSemitone(i32),
 
     // UI focus
     FocusNext,

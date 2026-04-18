@@ -163,28 +163,102 @@ fn run_app(
 }
 
 fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
-    use crate::music::PianoKey;
+    use crate::music;
 
-    // Piano keyboard mapping - using QWERTY layout
-    // Row 1:  W E   T Y U  ( C# D#   F# G# A# )
-    // Row 2: A S D F G H J (C  D  E F  G  A  B)
-    // k = Octave Down
-    // L = Octave up
     match key.code {
-        // Piano keys - QWERTY layout (Octave 4) - CHECK THESE FIRST!
-        KeyCode::Char('a') => Message::PianoPressKey(PianoKey::C4),
-        KeyCode::Char('w') => Message::PianoPressKey(PianoKey::CSharp4),
-        KeyCode::Char('s') => Message::PianoPressKey(PianoKey::D4),
-        KeyCode::Char('e') => Message::PianoPressKey(PianoKey::DSharp4),
-        KeyCode::Char('d') => Message::PianoPressKey(PianoKey::E4),
+        // Piano keys a-j map to C-B (semitones 0-11) in current octave
+        KeyCode::Char('a') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 0) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('w') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 1) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('s') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 2) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('e') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 3) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('d') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 4) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('f') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 5) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('t') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 6) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('g') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 7) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('y') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 8) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('h') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 9) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('u') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 10) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
+        KeyCode::Char('j') => {
+            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 11) {
+                Message::KeyboardKeyDown(Some(key))
+            } else {
+                Message::KeyboardKeyDown(None)
+            }
+        }
 
-        KeyCode::Char('f') => Message::PianoPressKey(PianoKey::F4),
-        KeyCode::Char('t') => Message::PianoPressKey(PianoKey::FSharp4),
-        KeyCode::Char('g') => Message::PianoPressKey(PianoKey::G4),
-        KeyCode::Char('y') => Message::PianoPressKey(PianoKey::GSharp4),
-        KeyCode::Char('h') => Message::PianoPressKey(PianoKey::A4),
-        KeyCode::Char('u') => Message::PianoPressKey(PianoKey::ASharp4),
-        KeyCode::Char('j') => Message::PianoPressKey(PianoKey::B4),
+        // Octave navigation
+        KeyCode::Char('k') => Message::ChangeOctave(-1),
+        KeyCode::Char('l') => Message::ChangeOctave(1),
+
+        // Semitone navigation
+        KeyCode::Char('o') => Message::ChangeSemitone(-1),
+        KeyCode::Char('p') => Message::ChangeSemitone(1),
 
         // Waveform selection
         KeyCode::Char('1') => Message::SetWaveform(WaveShape::Sine),
@@ -228,33 +302,20 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
 }
 
 fn key_to_release_message(key: KeyEvent) -> Option<Message> {
-    use crate::music::PianoKey;
-
+    // All piano keys (a-j) trigger KeyboardKeyUp on release
     match key.code {
-        // Piano keys - QWERTY layout (Octave 4)
-        KeyCode::Char('q') => Some(Message::PianoReleaseKey(PianoKey::C4)),
-        KeyCode::Char('2') => Some(Message::PianoReleaseKey(PianoKey::CSharp4)),
-        KeyCode::Char('w') => Some(Message::PianoReleaseKey(PianoKey::D4)),
-        KeyCode::Char('3') => Some(Message::PianoReleaseKey(PianoKey::DSharp4)),
-        KeyCode::Char('e') => Some(Message::PianoReleaseKey(PianoKey::E4)),
-        KeyCode::Char('r') => Some(Message::PianoReleaseKey(PianoKey::F4)),
-        KeyCode::Char('5') => Some(Message::PianoReleaseKey(PianoKey::FSharp4)),
-        KeyCode::Char('t') => Some(Message::PianoReleaseKey(PianoKey::G4)),
-        KeyCode::Char('6') => Some(Message::PianoReleaseKey(PianoKey::GSharp4)),
-        KeyCode::Char('y') => Some(Message::PianoReleaseKey(PianoKey::A4)),
-        KeyCode::Char('7') => Some(Message::PianoReleaseKey(PianoKey::ASharp4)),
-        KeyCode::Char('u') => Some(Message::PianoReleaseKey(PianoKey::B4)),
-        KeyCode::Char('i') => Some(Message::PianoReleaseKey(PianoKey::C5)),
-
-        // Alt row: Z X C V B N M
-        KeyCode::Char('z') => Some(Message::PianoReleaseKey(PianoKey::G3)),
-        KeyCode::Char('x') => Some(Message::PianoReleaseKey(PianoKey::GSharp3)),
-        KeyCode::Char('c') => Some(Message::PianoReleaseKey(PianoKey::A3)),
-        KeyCode::Char('v') => Some(Message::PianoReleaseKey(PianoKey::ASharp3)),
-        KeyCode::Char('b') => Some(Message::PianoReleaseKey(PianoKey::B3)),
-        KeyCode::Char('n') => Some(Message::PianoReleaseKey(PianoKey::C4)),
-        KeyCode::Char('m') => Some(Message::PianoReleaseKey(PianoKey::CSharp4)),
-
+        KeyCode::Char('a')
+        | KeyCode::Char('w')
+        | KeyCode::Char('s')
+        | KeyCode::Char('e')
+        | KeyCode::Char('d')
+        | KeyCode::Char('f')
+        | KeyCode::Char('t')
+        | KeyCode::Char('g')
+        | KeyCode::Char('y')
+        | KeyCode::Char('h')
+        | KeyCode::Char('u')
+        | KeyCode::Char('j') => Some(Message::KeyboardKeyUp),
         _ => None,
     }
 }
@@ -267,7 +328,7 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
     }
 
     let block = Block::default()
-        .title("Piano Keyboard (Q-I and Z-M)")
+        .title("Piano Keyboard (a-j, octave: k/l, semitone: o/p)")
         .borders(Borders::ALL);
 
     let inner = block.inner(area);
@@ -277,42 +338,15 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
         return;
     }
 
-    // Display piano keys - show which ones are active
+    // Display piano keys - show which one is currently pressed
     let mut key_display = String::new();
+    key_display.push_str(&format!("Octave: {}  ", state.current_octave));
+    key_display.push_str(&format!("Semitone offset: {}  ", state.semitone_offset));
 
-    // Show octave 3 bottom row and octave 4 top row
-    let keys_to_show = [
-        PianoKey::G3,
-        PianoKey::GSharp3,
-        PianoKey::A3,
-        PianoKey::ASharp3,
-        PianoKey::B3,
-        PianoKey::C4,
-        PianoKey::CSharp4,
-        PianoKey::D4,
-        PianoKey::DSharp4,
-        PianoKey::E4,
-        PianoKey::F4,
-        PianoKey::FSharp4,
-        PianoKey::G4,
-        PianoKey::GSharp4,
-        PianoKey::A4,
-        PianoKey::ASharp4,
-        PianoKey::B4,
-        PianoKey::C5,
-        PianoKey::CSharp5,
-        PianoKey::D5,
-    ];
-
-    for (i, key) in keys_to_show.iter().enumerate() {
-        if i > 0 && i % 12 == 0 {
-            key_display.push('\n');
-        }
-        if state.piano_active_keys.contains(key) {
-            key_display.push_str(&format!("[{}]", key.name()));
-        } else {
-            key_display.push_str(&format!(" {} ", key.name()));
-        }
+    if let Some(key) = state.current_piano_key {
+        key_display.push_str(&format!("Playing: [{}]", key.name()));
+    } else {
+        key_display.push_str("Playing: (none)");
     }
 
     let para = Paragraph::new(key_display).alignment(Alignment::Center);

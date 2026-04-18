@@ -3,6 +3,7 @@ use super::state::{FocusedField, SynthState};
 use crate::waveform::WaveShape;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use std::time::Duration;
+use crate::music;
 
 pub fn update(mut state: SynthState, msg: Message) -> SynthState {
     match msg {
@@ -58,19 +59,27 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
                 FocusedField::PlayToggleButton => FocusedField::PlayButton,
             };
         }
-        Message::PianoPressKey(key) => {
-            state.piano_active_keys.insert(key);
-            state.frequency = key.frequency();
-            state.is_playing = true;
+        Message::KeyboardKeyDown(key_option) => {
+            if let Some(key) = key_option {
+                state.current_piano_key = Some(key);
+                state.frequency = key.frequency();
+                state.is_playing = true;
+            }
         }
-        Message::PianoReleaseKey(key) => {
-            state.piano_active_keys.remove(&key);
-            if state.piano_active_keys.is_empty() {
-                state.is_playing = false;
-            } else {
-                // Play the highest remaining key
-                if let Some(&highest_key) = state.piano_active_keys.iter().max() {
-                    state.frequency = highest_key.frequency();
+        Message::KeyboardKeyUp => {
+            state.current_piano_key = None;
+            state.is_playing = false;
+        }
+        Message::ChangeOctave(delta) => {
+            state.current_octave = (state.current_octave + delta).clamp(0, 8);
+        }
+        Message::ChangeSemitone(delta) => {
+            state.semitone_offset = (state.semitone_offset + delta).rem_euclid(12);
+            // If a key is currently pressed, update its frequency
+            if let Some(_key) = state.current_piano_key {
+                let semitone_steps = state.semitone_offset;
+                if let Some(new_key) = music::get_key_for_octave_and_semitone(state.current_octave, semitone_steps) {
+                    state.frequency = new_key.frequency();
                 }
             }
         }
