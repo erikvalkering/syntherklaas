@@ -336,10 +336,32 @@ fn render_waveform_button(
 
     // ASCII art for each waveform
     let (label, ascii_art) = match wave_type {
-        WaveShape::Sine => ("Sine", "   /\\    /\\  \n  /  \\  /  \\\n"),
-        WaveShape::Square => ("Square", "╔═╗ ╔═╗\n║ ║ ║ ║\n"),
-        WaveShape::Triangle => ("Tri", "  /\\  /\\ \n /  \\/  \\\n"),
-        WaveShape::Sawtooth => ("Saw", "\\  /\\ \n \\/ \\  \n"),
+        WaveShape::Sine => (
+            "Sine wave",
+            " \
+ ╭──╮    ╭──╮    ╭──╮
+╭╯  ╰╮  ╭╯  ╰╮  ╭╯  ╰╮
+╯    ╰──╯    ╰──╯    ╰ ",
+        ),
+        WaveShape::Square => (
+            "Square wave",
+            "  \
+  ┌───┐   ┌───┐   ┌───┐
+  │   │   │   │   │   │
+──┘   └───┘   └───┘   └──",
+        ),
+        WaveShape::Triangle => (
+            "Triangle wave",
+            "
+  ╱╲  ╱╲  ╱╲  ╱╲  ╱╲
+ ╱  ╲╱  ╲╱  ╲╱  ╲╱  ╲",
+        ),
+        WaveShape::Sawtooth => (
+            "Sawtooth wave",
+            "
+ ╱│ ╱│ ╱│ ╱│ ╱│ ╱│ ╱│
+╱ │╱ │╱ │╱ │╱ │╱ │╱ │",
+        ),
     };
 
     let style = if is_active {
@@ -374,7 +396,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .constraints([
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Length(3),
+            Constraint::Length(5),
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(5),
