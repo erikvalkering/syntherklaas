@@ -282,21 +282,6 @@ impl PianoKey {
             PianoKey::C8 => "C8",
         }
     }
-
-    /// Returns true if this is a black key (sharp/flat)
-    pub fn is_black(&self) -> bool {
-        match self {
-            PianoKey::ASharp0
-            | PianoKey::CSharp1 | PianoKey::DSharp1 | PianoKey::FSharp1 | PianoKey::GSharp1 | PianoKey::ASharp1
-            | PianoKey::CSharp2 | PianoKey::DSharp2 | PianoKey::FSharp2 | PianoKey::GSharp2 | PianoKey::ASharp2
-            | PianoKey::CSharp3 | PianoKey::DSharp3 | PianoKey::FSharp3 | PianoKey::GSharp3 | PianoKey::ASharp3
-            | PianoKey::CSharp4 | PianoKey::DSharp4 | PianoKey::FSharp4 | PianoKey::GSharp4 | PianoKey::ASharp4
-            | PianoKey::CSharp5 | PianoKey::DSharp5 | PianoKey::FSharp5 | PianoKey::GSharp5 | PianoKey::ASharp5
-            | PianoKey::CSharp6 | PianoKey::DSharp6 | PianoKey::FSharp6 | PianoKey::GSharp6 | PianoKey::ASharp6
-            | PianoKey::CSharp7 | PianoKey::DSharp7 | PianoKey::FSharp7 | PianoKey::GSharp7 | PianoKey::ASharp7 => true,
-            _ => false,
-        }
-    }
 }
 
 /// Get a PianoKey for a given octave and semitone position within octave (0-11)
@@ -407,98 +392,6 @@ pub fn get_key_for_octave_and_semitone(octave: i32, semitone: i32) -> Option<Pia
         _ => return None,
     };
     Some(key_name)
-}
-pub fn all_keys() -> [PianoKey; 88] {
-    [
-        PianoKey::A0,
-        PianoKey::ASharp0,
-        PianoKey::B0,
-        PianoKey::C1,
-        PianoKey::CSharp1,
-        PianoKey::D1,
-        PianoKey::DSharp1,
-        PianoKey::E1,
-        PianoKey::F1,
-        PianoKey::FSharp1,
-        PianoKey::G1,
-        PianoKey::GSharp1,
-        PianoKey::A1,
-        PianoKey::ASharp1,
-        PianoKey::B1,
-        PianoKey::C2,
-        PianoKey::CSharp2,
-        PianoKey::D2,
-        PianoKey::DSharp2,
-        PianoKey::E2,
-        PianoKey::F2,
-        PianoKey::FSharp2,
-        PianoKey::G2,
-        PianoKey::GSharp2,
-        PianoKey::A2,
-        PianoKey::ASharp2,
-        PianoKey::B2,
-        PianoKey::C3,
-        PianoKey::CSharp3,
-        PianoKey::D3,
-        PianoKey::DSharp3,
-        PianoKey::E3,
-        PianoKey::F3,
-        PianoKey::FSharp3,
-        PianoKey::G3,
-        PianoKey::GSharp3,
-        PianoKey::A3,
-        PianoKey::ASharp3,
-        PianoKey::B3,
-        PianoKey::C4,
-        PianoKey::CSharp4,
-        PianoKey::D4,
-        PianoKey::DSharp4,
-        PianoKey::E4,
-        PianoKey::F4,
-        PianoKey::FSharp4,
-        PianoKey::G4,
-        PianoKey::GSharp4,
-        PianoKey::A4,
-        PianoKey::ASharp4,
-        PianoKey::B4,
-        PianoKey::C5,
-        PianoKey::CSharp5,
-        PianoKey::D5,
-        PianoKey::DSharp5,
-        PianoKey::E5,
-        PianoKey::F5,
-        PianoKey::FSharp5,
-        PianoKey::G5,
-        PianoKey::GSharp5,
-        PianoKey::A5,
-        PianoKey::ASharp5,
-        PianoKey::B5,
-        PianoKey::C6,
-        PianoKey::CSharp6,
-        PianoKey::D6,
-        PianoKey::DSharp6,
-        PianoKey::E6,
-        PianoKey::F6,
-        PianoKey::FSharp6,
-        PianoKey::G6,
-        PianoKey::GSharp6,
-        PianoKey::A6,
-        PianoKey::ASharp6,
-        PianoKey::B6,
-        PianoKey::C7,
-        PianoKey::CSharp7,
-        PianoKey::D7,
-        PianoKey::DSharp7,
-        PianoKey::E7,
-        PianoKey::F7,
-        PianoKey::FSharp7,
-        PianoKey::G7,
-        PianoKey::GSharp7,
-        PianoKey::A7,
-        PianoKey::ASharp7,
-        PianoKey::B7,
-        PianoKey::C8,
-    ]
 }
 
 #[cfg(test)]

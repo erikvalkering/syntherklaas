@@ -7,7 +7,6 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratatui::style::Styled;
 use ratatui::{
     Frame, Terminal,
     backend::CrosstermBackend,
