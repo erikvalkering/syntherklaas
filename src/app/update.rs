@@ -116,11 +116,11 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
             // Column positions approximately: 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72
 
             let col = mouse.column as i32;
-            let semitone = if col >= 4 && col <= 80 {
+            let semitone = if (4..=80).contains(&col) {
                 // Map column to semitone 0-11
                 let relative_col = (col - 4) / 6;
-                if relative_col >= 0 && relative_col < 12 {
-                    Some(relative_col as i32)
+                if (0..12).contains(&relative_col) {
+                    Some(relative_col)
                 } else {
                     None
                 }
@@ -128,14 +128,13 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
                 None
             };
 
-            if let Some(st) = semitone {
-                if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, st)
+            if let Some(st) = semitone
+                && let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, st)
                 {
                     state.current_piano_key = Some(key);
                     state.frequency = key.frequency();
                     state.is_playing = true;
                 }
-            }
 
             state.mouse_dragging = true;
             state.mouse_start_x = mouse.column;
