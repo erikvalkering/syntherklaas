@@ -45,18 +45,14 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
             state.focused_field = match state.focused_field {
                 FocusedField::Frequency => FocusedField::Volume,
                 FocusedField::Volume => FocusedField::Shape,
-                FocusedField::Shape => FocusedField::PlayButton,
-                FocusedField::PlayButton => FocusedField::PlayToggleButton,
-                FocusedField::PlayToggleButton => FocusedField::Frequency,
+                FocusedField::Shape => FocusedField::Frequency,
             };
         }
         Message::FocusPrev => {
             state.focused_field = match state.focused_field {
-                FocusedField::Frequency => FocusedField::PlayToggleButton,
+                FocusedField::Frequency => FocusedField::Shape,
                 FocusedField::Volume => FocusedField::Frequency,
                 FocusedField::Shape => FocusedField::Volume,
-                FocusedField::PlayButton => FocusedField::Shape,
-                FocusedField::PlayToggleButton => FocusedField::PlayButton,
             };
         }
         Message::KeyboardKeyDown(key_option) => {

@@ -25,8 +25,6 @@ pub enum FocusedField {
     Frequency,
     Volume,
     Shape,
-    PlayButton,
-    PlayToggleButton,
 }
 
 impl SynthState {

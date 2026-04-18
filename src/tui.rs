@@ -287,15 +287,8 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
                 Message::FocusNext
             }
         }
-        KeyCode::Char(' ') | KeyCode::Enter => {
-            if state.focused_field == FocusedField::PlayButton {
-                Message::PressPlayButton
-            } else if state.focused_field == FocusedField::PlayToggleButton {
-                Message::TogglePlay
-            } else {
-                Message::FocusNext
-            }
-        }
+        KeyCode::Char(' ') => Message::TogglePlay,
+        KeyCode::Enter => Message::FocusNext,
         KeyCode::Esc | KeyCode::Char('q') => Message::Exit,
 
         _ => Message::FocusNext,
@@ -448,8 +441,6 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(5),
-            Constraint::Length(3),
-            Constraint::Length(3),
             Constraint::Length(15),
             Constraint::Min(1),
             Constraint::Max(16),
@@ -510,66 +501,20 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     render_waveform_button(f, wave_chunks[2], WaveShape::Triangle, shape);
     render_waveform_button(f, wave_chunks[3], WaveShape::Sawtooth, shape);
 
-    // Play button
-    let play_style = if state.focused_field == FocusedField::PlayButton {
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::Blue)
-            .add_modifier(Modifier::BOLD)
-    } else {
-        Style::default()
-    };
-    let play_status = if state.is_playing {
-        "PLAYING (Click or press Space/Enter to release)"
-    } else {
-        "CLICK TO PLAY (or press Space)"
-    };
-    let play_block = Block::default()
-        .title("Play Button")
-        .borders(Borders::ALL)
-        .style(play_style);
-    let play_para = Paragraph::new(play_status)
-        .block(play_block)
-        .alignment(Alignment::Center);
-    f.render_widget(play_para, chunks[3]);
-
-    // Play toggle button
-    let playtoggle_style = if state.focused_field == FocusedField::PlayToggleButton {
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::Blue)
-            .add_modifier(Modifier::BOLD)
-    } else {
-        Style::default()
-    };
-    let playtoggle_status = if state.is_playing {
-        "Playing (Click or press Space/Enter to toggle)"
-    } else {
-        "Stopped (Click or press Space to toggle)"
-    };
-    let playtoggle_block = Block::default()
-        .title("Play Toggle Button")
-        .borders(Borders::ALL)
-        .style(playtoggle_style);
-    let playtoggle_para = Paragraph::new(playtoggle_status)
-        .block(playtoggle_block)
-        .alignment(Alignment::Center);
-    f.render_widget(playtoggle_para, chunks[4]);
-
     // Piano keyboard
-    render_piano_widget(f, chunks[5], state);
+    render_piano_widget(f, chunks[3], state);
 
     // Instructions
     let instructions = vec![
-        Line::from("Piano: Q W E R T Y U I (Z X C V B N M)"),
+        Line::from("Piano: a-j keys | Octave: k/l | Semitone: o/p"),
         Line::from("Waveforms: 1=Sine | 2=Square | 3=Triangle | 4=Sawtooth"),
-        Line::from("Controls: Tab - Switch field | ↑/↓ - Adjust freq/vol"),
-        Line::from("  Space - Play button | Esc - Quit"),
+        Line::from("Controls: Tab=Switch field | ↑/↓=Adjust | Space=Toggle audio"),
+        Line::from("Mouse: Click piano keys | Esc/Q=Quit"),
     ];
 
     let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
     let instructions_para = Paragraph::new(instructions).block(instructions_block);
-    f.render_widget(instructions_para, chunks[6]);
+    f.render_widget(instructions_para, chunks[4]);
 
     let logo = String::from(
         "
@@ -591,5 +536,5 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .block(logo_block)
         .centered()
         .style(Color::Red);
-    f.render_widget(logo_para, chunks[7]);
+    f.render_widget(logo_para, chunks[5]);
 }
