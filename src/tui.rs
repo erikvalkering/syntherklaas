@@ -357,19 +357,15 @@ fn render_piano_widget(f: &mut Frame, area: ratatui::layout::Rect, state: &Synth
         let mut keyboard_display = String::new();
 
         // Draw black keys on first line (upper row)
-        keyboard_display.push_str("      ╔═╗   ╔═╗       ╔═╗   ╔═╗   ╔═╗       ╔═╗   ╔═╗\n");
-        keyboard_display.push_str("      ║#║   ║#║       ║#║   ║#║   ║#║       ║#║   ║#║\n");
-        keyboard_display.push_str("      ╚═╝   ╚═╝       ╚═╝   ╚═╝   ╚═╝       ╚═╝   ╚═╝\n");
+        keyboard_display.push_str("       ╔═╗ ╔═╗     ╔═╗ ╔═╗ ╔═╗\n");
+        keyboard_display.push_str("       ║#║ ║#║     ║#║ ║#║ ║#║\n");
+        keyboard_display.push_str("       ╚═╝ ╚═╝     ╚═╝ ╚═╝ ╚═╝\n");
 
         // Draw white keys on second line (lower row)
-        keyboard_display
-            .push_str("    ╔════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╦════╗\n");
-        keyboard_display
-            .push_str("    ║ a  ║ w  ║ s  ║ e  ║ d  ║ f  ║ t  ║ g  ║ y  ║ h  ║ u  ║ j  ║\n");
-        keyboard_display
-            .push_str("    ║ C  ║ D  ║ E  ║ F  ║ G  ║ A  ║ B  ║ C  ║ D  ║ E  ║ F  ║ G  ║\n");
-        keyboard_display
-            .push_str("    ╚════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╩════╝");
+        keyboard_display.push_str("    ╔═══╦═══╦═══╦═══╦═══╦═══╦═══╗\n");
+        keyboard_display.push_str("    ║ a ║ s ║ d ║ f ║ g ║ h ║ j ║\n");
+        keyboard_display.push_str("    ║ C ║ D ║ E ║ F ║ G ║ A ║ B ║\n");
+        keyboard_display.push_str("    ╚═══╩═══╩═══╩═══╩═══╩═══╩═══╝");
 
         let mut keyboard_area = inner;
         keyboard_area.y += 1;
