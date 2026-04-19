@@ -105,24 +105,29 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
 
     match mouse.kind {
         MouseEventKind::Down(_) => {
-            // Check if click is on piano keyboard and convert to key
-            // Keyboard layout has white keys starting around column 4
-            // Each white key is 6 characters wide (╔════╗ = 6 chars)
-            // Black keys are positioned above at specific offsets
+            // Detect which piano key was clicked
+            // Piano keyboard layout (with margins):
+            //   "    ╔═══╦═══╦═══╦═══╦═══╦═══╦═══╗"
+            //   "    ║ a ║ s ║ d ║ f ║ g ║ h ║ j ║"
+            //   "    ║ C ║ D ║ E ║ F ║ G ║ A ║ B ║"
+            //   "    ╚═══╩═══╩═══╩═══╩═══╩═══╩═══╝"
+            // Each key cell is 4 characters wide
+            // Key centers: C≈5, D≈9, E≈13, F≈17, G≈21, A≈25, B≈29
 
-            // Simple heuristic: if row is around line 7-8 and column matches a key position
+            let col = mouse.column;
+
             // Map column to semitone (0-11 for C through B)
-            // Key positions: "a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"
-            // Column positions approximately: 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72
-
-            let col = mouse.column as i32;
-            let semitone = if (4..=80).contains(&col) {
-                // Map column to semitone 0-11
-                let relative_col = (col - 4) / 6;
-                if (0..12).contains(&relative_col) {
-                    Some(relative_col)
-                } else {
-                    None
+            let semitone = if (4..=31).contains(&col) {
+                // Determine key from column position
+                match col {
+                    3..=6 => Some(0),    // C
+                    7..=10 => Some(2),   // D
+                    11..=14 => Some(4),  // E
+                    15..=18 => Some(5),  // F
+                    19..=22 => Some(7),  // G
+                    23..=26 => Some(9),  // A
+                    27..=31 => Some(11), // B
+                    _ => None,
                 }
             } else {
                 None
