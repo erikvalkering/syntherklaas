@@ -33,7 +33,6 @@ pub enum Message {
 
     // UI focus
     FocusNext,
-    #[allow(unused)]
     FocusPrev,
 
     // Timeout-based release detection

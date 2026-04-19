@@ -122,7 +122,9 @@ fn run_app(
             match event::read()? {
                 Event::Key(key) => {
                     if key.kind == event::KeyEventKind::Press {
-                        *state = update(state.clone(), key_to_message(key, state));
+                        if let Some(msg) = key_to_message(key, state) {
+                            *state = update(state.clone(), msg);
+                        }
                     } else if key.kind == event::KeyEventKind::Release {
                         if let Some(msg) = key_to_release_message(key) {
                             *state = update(state.clone(), msg);
@@ -162,135 +164,57 @@ fn run_app(
     Ok(())
 }
 
-fn key_to_message(key: KeyEvent, state: &SynthState) -> Message {
+fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
     use crate::music;
 
     match key.code {
         // Piano keys a-j map to C-B (semitones 0-11) in current octave
-        KeyCode::Char('a') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 0) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('w') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 1) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('s') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 2) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('e') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 3) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('d') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 4) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('f') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 5) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('t') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 6) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('g') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 7) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('y') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 8) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('h') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 9) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('u') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 10) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
-        KeyCode::Char('j') => {
-            if let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, 11) {
-                Message::KeyboardKeyDown(Some(key))
-            } else {
-                Message::KeyboardKeyDown(None)
-            }
-        }
+        KeyCode::Char(c) if "awsedftgyhuj".contains(c) => Some(Message::KeyboardKeyDown(
+            music::get_key_for_octave_and_semitone(
+                state.current_octave,
+                "awsedftgyhuj".chars().position(|k| k == c).unwrap() as i32,
+            ),
+        )),
 
         // Octave navigation
-        KeyCode::Char('k') => Message::ChangeOctave(-1),
-        KeyCode::Char('l') => Message::ChangeOctave(1),
+        KeyCode::Char('k') => Some(Message::ChangeOctave(-1)),
+        KeyCode::Char('l') => Some(Message::ChangeOctave(1)),
 
         // Semitone navigation
-        KeyCode::Char('o') => Message::ChangeSemitone(-1),
-        KeyCode::Char('p') => Message::ChangeSemitone(1),
+        KeyCode::Char('o') => Some(Message::ChangeSemitone(-1)),
+        KeyCode::Char('p') => Some(Message::ChangeSemitone(1)),
 
         // Waveform selection
-        KeyCode::Char('1') => Message::SetWaveform(WaveShape::Sine),
-        KeyCode::Char('2') => Message::SetWaveform(WaveShape::Square),
-        KeyCode::Char('3') => Message::SetWaveform(WaveShape::Triangle),
-        KeyCode::Char('4') => Message::SetWaveform(WaveShape::Sawtooth),
+        KeyCode::Char('1') => Some(Message::SetWaveform(WaveShape::Sine)),
+        KeyCode::Char('2') => Some(Message::SetWaveform(WaveShape::Square)),
+        KeyCode::Char('3') => Some(Message::SetWaveform(WaveShape::Triangle)),
+        KeyCode::Char('4') => Some(Message::SetWaveform(WaveShape::Sawtooth)),
 
         // UI controls
-        KeyCode::Tab => Message::FocusNext,
+        KeyCode::Tab => Some(Message::FocusNext),
+        KeyCode::BackTab => Some(Message::FocusPrev),
         KeyCode::Up => {
             if state.focused_field == FocusedField::Frequency {
-                Message::IncreaseFrequency
+                Some(Message::IncreaseFrequency)
             } else if state.focused_field == FocusedField::Volume {
-                Message::IncreaseVolume
+                Some(Message::IncreaseVolume)
             } else {
-                Message::FocusNext
+                None
             }
         }
         KeyCode::Down => {
             if state.focused_field == FocusedField::Frequency {
-                Message::DecreaseFrequency
+                Some(Message::DecreaseFrequency)
             } else if state.focused_field == FocusedField::Volume {
-                Message::DecreaseVolume
+                Some(Message::DecreaseVolume)
             } else {
-                Message::FocusNext
+                None
             }
         }
-        KeyCode::Char(' ') => Message::TogglePlay,
-        KeyCode::Enter => Message::FocusNext,
-        KeyCode::Esc | KeyCode::Char('q') => Message::Exit,
+        KeyCode::Char(' ') => Some(Message::TogglePlay),
+        KeyCode::Esc | KeyCode::Char('q') => Some(Message::Exit),
 
-        _ => Message::FocusNext,
+        _ => None,
     }
 }
 
