@@ -428,7 +428,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     let instructions = vec![
         Line::from("Piano: a-j keys | Octave: k/l | Semitone: o/p"),
         Line::from("Waveforms: 1=Sine | 2=Square | 3=Triangle | 4=Sawtooth"),
-        Line::from("Controls: Tab=Switch field | ↑/↓=Adjust | Space=Toggle audio"),
+        Line::from("Controls: (Shift-)Tab=Switch field | ↑/↓=Adjust"),
         Line::from("Mouse: Click piano keys | Esc/Q=Quit"),
     ];
 
