@@ -44,6 +44,16 @@ pub struct PianoKey {
 }
 
 impl PianoKey {
+    /// Create a new piano key                
+    #[cfg(test)]
+    pub fn new(note: Note, sharp: bool, octave: i32) -> Self {
+        PianoKey {
+            note,
+            sharp,
+            octave,
+        }
+    }
+
     /// Calculate the frequency in Hz for this piano key.
     /// Uses A4 = 440 Hz as the reference.
     pub fn frequency(&self) -> f32 {
