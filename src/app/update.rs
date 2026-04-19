@@ -130,11 +130,11 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
 
             if let Some(st) = semitone
                 && let Some(key) = music::get_key_for_octave_and_semitone(state.current_octave, st)
-                {
-                    state.current_piano_key = Some(key);
-                    state.frequency = key.frequency();
-                    state.is_playing = true;
-                }
+            {
+                state.current_piano_key = Some(key);
+                state.frequency = key.frequency();
+                state.is_playing = true;
+            }
 
             state.mouse_dragging = true;
             state.mouse_start_x = mouse.column;

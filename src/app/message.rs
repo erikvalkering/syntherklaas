@@ -27,6 +27,7 @@ pub enum Message {
 
     // Piano control - monophonic
     KeyboardKeyDown(Option<PianoKey>),
+    #[allow(unused)]
     KeyboardKeyUp,
     ChangeOctave(i32),
     ChangeSemitone(i32),

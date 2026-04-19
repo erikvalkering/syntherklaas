@@ -3,7 +3,10 @@ use crate::app::{Message, SynthState, update};
 use crate::audio::AudioPlayer;
 use crate::waveform::WaveShape;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent},
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent,
+        KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+    },
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
@@ -20,6 +23,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
+
+const PIANO_KEYS: &str = "awsedftgyhuj";
 
 pub fn run_tui(verbose: bool) -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
@@ -115,32 +120,41 @@ fn run_app(
         })
     };
 
+    execute!(
+        io::stdout(),
+        PushKeyboardEnhancementFlags(
+            KeyboardEnhancementFlags::REPORT_EVENT_TYPES
+                | KeyboardEnhancementFlags::REPORT_ALL_KEYS_AS_ESCAPE_CODES
+        )
+    )?;
+
     loop {
         terminal.draw(|f| render_ui(f, state))?;
 
-        if crossterm::event::poll(Duration::from_millis(100))? {
+        let msg = if crossterm::event::poll(Duration::from_millis(100))? {
             match event::read()? {
-                Event::Key(key) => {
-                    if key.kind == event::KeyEventKind::Press {
-                        if let Some(msg) = key_to_message(key, state) {
-                            *state = update(state.clone(), msg);
-                        }
-                    } else if key.kind == event::KeyEventKind::Release {
-                        if let Some(msg) = key_to_release_message(key) {
-                            *state = update(state.clone(), msg);
-                        } else {
-                            *state = update(state.clone(), Message::ReleasePlayButton);
-                        }
+                Event::Key(key) => match key.kind {
+                    event::KeyEventKind::Press => key_to_message(key, state),
+                    event::KeyEventKind::Release
+                        if PIANO_KEYS.contains(key.code.as_char().unwrap()) =>
+                    {
+                        Some(Message::ReleasePlayButton)
                     }
-                }
-                Event::Mouse(mouse) => {
-                    *state = update(state.clone(), Message::MouseEvent(mouse));
-                }
-                _ => {}
-            }
-        }
 
-        *state = update(state.clone(), Message::CheckTimeoutRelease);
+                    _ => None,
+                },
+
+                Event::Mouse(mouse) => Some(Message::MouseEvent(mouse)),
+
+                _ => None,
+            }
+        } else {
+            Some(Message::CheckTimeoutRelease)
+        };
+
+        if let Some(msg2) = msg {
+            *state = update(state.clone(), msg2);
+        }
 
         // Sync state to audio thread
         if let Ok(mut freq) = freq_arc.lock() {
@@ -160,6 +174,8 @@ fn run_app(
         }
     }
 
+    execute!(io::stdout(), PopKeyboardEnhancementFlags)?;
+
     should_exit_arc.store(true, Ordering::Relaxed);
     Ok(())
 }
@@ -169,10 +185,10 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
 
     match key.code {
         // Piano keys a-j map to C-B (semitones 0-11) in current octave
-        KeyCode::Char(c) if "awsedftgyhuj".contains(c) => Some(Message::KeyboardKeyDown(
+        KeyCode::Char(c) if PIANO_KEYS.contains(c) => Some(Message::KeyboardKeyDown(
             music::get_key_for_octave_and_semitone(
                 state.current_octave,
-                "awsedftgyhuj".chars().position(|k| k == c).unwrap() as i32,
+                PIANO_KEYS.chars().position(|k| k == c).unwrap() as i32,
             ),
         )),
 
@@ -214,25 +230,6 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
         KeyCode::Char(' ') => Some(Message::TogglePlay),
         KeyCode::Esc | KeyCode::Char('q') => Some(Message::Exit),
 
-        _ => None,
-    }
-}
-
-fn key_to_release_message(key: KeyEvent) -> Option<Message> {
-    // All piano keys (a-j) trigger KeyboardKeyUp on release
-    match key.code {
-        KeyCode::Char('a')
-        | KeyCode::Char('w')
-        | KeyCode::Char('s')
-        | KeyCode::Char('e')
-        | KeyCode::Char('d')
-        | KeyCode::Char('f')
-        | KeyCode::Char('t')
-        | KeyCode::Char('g')
-        | KeyCode::Char('y')
-        | KeyCode::Char('h')
-        | KeyCode::Char('u')
-        | KeyCode::Char('j') => Some(Message::KeyboardKeyUp),
         _ => None,
     }
 }
