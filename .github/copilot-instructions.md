@@ -55,15 +55,39 @@ cargo run -- --backend pulse     # Use PulseAudio only
 cargo run -- --verbose
 ```
 
-**TUI Controls:**
-- Tab - Switch between fields
-- ↑/↓ - Adjust frequency or volume
-- ←/→ - Change waveform
-- Space/Enter - Press and hold play button (or use mouse to click)
-- q/Esc - Quit
+**TUI Controls (Grid-Based Navigation):**
+
+*Grid Layout:*
+- Row 0: Frequency Slider
+- Row 1: Volume Slider
+- Row 2: Waveform Buttons (Sine, Square, Triangle, Sawtooth)
+
+*Navigation:*
+- Arrow Up/Down - Navigate between rows
+- Arrow Left/Right - Navigate within a row (useful for waveforms)
+- Tab/Shift-Tab - Cycle through focus (legacy alternative)
+
+*Value Adjustment:*
+- PageUp/PageDown - Adjust frequency or volume (when slider is focused)
+- Mouse Drag (Vertical) - Adjust frequency by dragging up/down
+- Mouse Drag (Horizontal) - Adjust volume by dragging left/right
+
+*Selection:*
+- Space - Select focused waveform or toggle play button
+- Number Keys (1-4) - Quick select waveforms (legacy support)
+- Mouse Click - Click piano keys or UI elements
+
+*Playback:*
+- Piano Keys (a-j) - Play notes (C through B in current octave)
+- k/l - Change octave (up/down)
+- o/p - Change semitone offset
+- Space (on sliders) - Toggle play/stop
+
+*Exit:*
+- q/Esc - Quit application
 
 **Testing**
-No automated tests exist. Manual testing involves running the application with various parameters and verifying audio output.
+Comprehensive test suite with 48 tests covering navigation, selection, and value adjustments. Run with `cargo test`.
 
 ## Architecture Overview
 
