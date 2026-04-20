@@ -210,28 +210,12 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
         KeyCode::Tab => Some(Message::FocusNext),
         KeyCode::BackTab => Some(Message::FocusPrev),
         KeyCode::Up => {
-            // On sliders (row 0-1): adjust value. On waveforms (row 2): move up
-            if state.focus.row < 2 {
-                if state.focus.row == 0 {
-                    Some(Message::IncreaseFrequency)
-                } else {
-                    Some(Message::IncreaseVolume)
-                }
-            } else {
-                Some(Message::MoveUp)
-            }
+            // Navigate up (grid navigation only)
+            Some(Message::MoveUp)
         }
         KeyCode::Down => {
-            // On sliders (row 0-1): adjust value. On waveforms (row 2): move down
-            if state.focus.row < 2 {
-                if state.focus.row == 0 {
-                    Some(Message::DecreaseFrequency)
-                } else {
-                    Some(Message::DecreaseVolume)
-                }
-            } else {
-                Some(Message::MoveDown)
-            }
+            // Navigate down (grid navigation only)
+            Some(Message::MoveDown)
         }
         KeyCode::Left => {
             // Navigate left within current row (mainly for waveforms on row 2)
@@ -240,6 +224,22 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
         KeyCode::Right => {
             // Navigate right within current row (mainly for waveforms on row 2)
             Some(Message::MoveRight)
+        }
+        KeyCode::PageUp => {
+            // Adjust focused slider upward (increase)
+            match state.focused_field() {
+                FocusedField::Frequency => Some(Message::IncreaseFrequency),
+                FocusedField::Volume => Some(Message::IncreaseVolume),
+                _ => None,
+            }
+        }
+        KeyCode::PageDown => {
+            // Adjust focused slider downward (decrease)
+            match state.focused_field() {
+                FocusedField::Frequency => Some(Message::DecreaseFrequency),
+                FocusedField::Volume => Some(Message::DecreaseVolume),
+                _ => None,
+            }
         }
         KeyCode::Char(' ') => {
             // Space: select focused widget on waveforms, toggle play on sliders
@@ -479,8 +479,10 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     // Instructions
     let instructions = vec![
         Line::from("Piano: a-j keys | Octave: k/l | Semitone: o/p"),
-        Line::from("Waveforms: ↑/↓↑/↓ (rows) | ←/→ (columns) | Space (select)"),
-        Line::from("Sliders: ↑/↓ (adjust) | Mouse drag (vertical for freq, horizontal for vol)"),
+        Line::from("Waveforms: ↑/↓ (rows) | ←/→ (columns) | Space (select)"),
+        Line::from(
+            "Sliders: PgUp/PgDn (adjust) | Mouse drag (vertical for freq, horizontal for vol)",
+        ),
         Line::from("Tab: Cycle focus | Esc/Q: Quit"),
     ];
 
