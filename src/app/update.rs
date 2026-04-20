@@ -231,3 +231,163 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
         _ => {}
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::focus::FocusPosition;
+
+    #[test]
+    fn test_move_up_from_frequency() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 1);
+        let updated = update(state, Message::MoveUp);
+        assert_eq!(updated.focus.row, 1);
+        assert_eq!(updated.focus.col, 0);
+    }
+
+    #[test]
+    fn test_move_up_clamps_to_zero() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(0, 0);
+        let updated = update(state, Message::MoveUp);
+        assert_eq!(updated.focus.row, 0);
+    }
+
+    #[test]
+    fn test_move_down_from_frequency() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(0, 0);
+        let updated = update(state, Message::MoveDown);
+        assert_eq!(updated.focus.row, 1);
+        assert_eq!(updated.focus.col, 0);
+    }
+
+    #[test]
+    fn test_move_down_clamps_to_max() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 0);
+        let updated = update(state, Message::MoveDown);
+        assert_eq!(updated.focus.row, 2);
+    }
+
+    #[test]
+    fn test_move_left_on_waveform() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 2);
+        let updated = update(state, Message::MoveLeft);
+        assert_eq!(updated.focus.row, 2);
+        assert_eq!(updated.focus.col, 1);
+    }
+
+    #[test]
+    fn test_move_left_clamps_to_zero() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 0);
+        let updated = update(state, Message::MoveLeft);
+        assert_eq!(updated.focus.col, 0);
+    }
+
+    #[test]
+    fn test_move_right_on_waveform() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 0);
+        let updated = update(state, Message::MoveRight);
+        assert_eq!(updated.focus.row, 2);
+        assert_eq!(updated.focus.col, 1);
+    }
+
+    #[test]
+    fn test_move_right_clamps_to_max() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 3);
+        let updated = update(state, Message::MoveRight);
+        assert_eq!(updated.focus.col, 3);
+    }
+
+    #[test]
+    fn test_increase_frequency_adjusts_value() {
+        let state = SynthState::new();
+        let updated = update(state, Message::IncreaseFrequency);
+        assert!(updated.frequency > 440.0);
+    }
+
+    #[test]
+    fn test_decrease_frequency_adjusts_value() {
+        let mut state = SynthState::new();
+        state.frequency = 500.0;
+        let updated = update(state, Message::DecreaseFrequency);
+        assert!(updated.frequency < 500.0);
+    }
+
+    #[test]
+    fn test_increase_volume_adjusts_value() {
+        let state = SynthState::new();
+        let updated = update(state, Message::IncreaseVolume);
+        assert!(updated.volume > 0.5);
+    }
+
+    #[test]
+    fn test_decrease_volume_adjusts_value() {
+        let mut state = SynthState::new();
+        state.volume = 0.6;
+        let updated = update(state, Message::DecreaseVolume);
+        assert!(updated.volume < 0.6);
+    }
+
+    #[test]
+    fn test_set_waveform() {
+        let state = SynthState::new();
+        let updated = update(state, Message::SetWaveform(WaveShape::Square));
+        assert_eq!(updated.shape, WaveShape::Square);
+    }
+
+    #[test]
+    fn test_toggle_play() {
+        let state = SynthState::new();
+        assert!(!state.is_playing);
+        let updated = update(state, Message::TogglePlay);
+        assert!(updated.is_playing);
+        assert!(updated.keep_playing);
+    }
+
+    #[test]
+    fn test_toggle_play_off() {
+        let mut state = SynthState::new();
+        state.is_playing = true;
+        state.keep_playing = true;
+        let updated = update(state, Message::TogglePlay);
+        assert!(!updated.is_playing);
+        assert!(!updated.keep_playing);
+    }
+
+    #[test]
+    fn test_focus_next_cycles() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(0, 0);
+        let updated = update(state, Message::FocusNext);
+        assert_eq!(updated.focus.row, 1);
+
+        let updated2 = update(updated, Message::FocusNext);
+        assert_eq!(updated2.focus.row, 2);
+    }
+
+    #[test]
+    fn test_focus_prev_cycles() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 1);
+        let updated = update(state, Message::FocusPrev);
+        assert_eq!(updated.focus.row, 1);
+
+        let updated2 = update(updated, Message::FocusPrev);
+        assert_eq!(updated2.focus.row, 0);
+    }
+
+    #[test]
+    fn test_focus_prev_wraps_from_zero_to_two() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(0, 0);
+        let updated = update(state, Message::FocusPrev);
+        assert_eq!(updated.focus.row, 2);
+    }
+}

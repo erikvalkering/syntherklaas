@@ -206,26 +206,40 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
         KeyCode::Char('3') => Some(Message::SetWaveform(WaveShape::Triangle)),
         KeyCode::Char('4') => Some(Message::SetWaveform(WaveShape::Sawtooth)),
 
-        // UI controls
+        // UI controls with grid-based navigation
         KeyCode::Tab => Some(Message::FocusNext),
         KeyCode::BackTab => Some(Message::FocusPrev),
         KeyCode::Up => {
-            if state.focused_field() == FocusedField::Frequency {
-                Some(Message::IncreaseFrequency)
-            } else if state.focused_field() == FocusedField::Volume {
-                Some(Message::IncreaseVolume)
+            // On sliders (row 0-1): adjust value. On waveforms (row 2): move up
+            if state.focus.row < 2 {
+                if state.focus.row == 0 {
+                    Some(Message::IncreaseFrequency)
+                } else {
+                    Some(Message::IncreaseVolume)
+                }
             } else {
-                None
+                Some(Message::MoveUp)
             }
         }
         KeyCode::Down => {
-            if state.focused_field() == FocusedField::Frequency {
-                Some(Message::DecreaseFrequency)
-            } else if state.focused_field() == FocusedField::Volume {
-                Some(Message::DecreaseVolume)
+            // On sliders (row 0-1): adjust value. On waveforms (row 2): move down
+            if state.focus.row < 2 {
+                if state.focus.row == 0 {
+                    Some(Message::DecreaseFrequency)
+                } else {
+                    Some(Message::DecreaseVolume)
+                }
             } else {
-                None
+                Some(Message::MoveDown)
             }
+        }
+        KeyCode::Left => {
+            // Navigate left within current row (mainly for waveforms on row 2)
+            Some(Message::MoveLeft)
+        }
+        KeyCode::Right => {
+            // Navigate right within current row (mainly for waveforms on row 2)
+            Some(Message::MoveRight)
         }
         KeyCode::Char(' ') => Some(Message::TogglePlay),
         KeyCode::Esc | KeyCode::Char('q') => Some(Message::Exit),
