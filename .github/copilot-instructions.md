@@ -2,6 +2,18 @@
 
 ## Development Workflow
 
+### Test-Driven Development (TDD)
+
+Follow TDD practices for all new features:
+
+1. **Write the test first** - Define the expected behavior in a test before implementing
+2. **Implement the feature** - Write code to make the test pass
+3. **Refactor** - Improve the code while keeping tests passing
+
+Every new feature must be covered by tests. This ensures correctness, prevents regressions, and serves as living documentation.
+
+### Code Quality Checks
+
 **After each change, run these commands before committing:**
 ```bash
 cargo test
@@ -15,7 +27,7 @@ Or all at once:
 cargo test && cargo check && cargo fmt && cargo clippy
 ```
 
-This ensures code quality, catches issues early, and maintains consistent formatting.
+This ensures code quality, catches issues early, maintains consistent formatting, and verifies all tests pass.
 
 ## Build, Test & Run
 
