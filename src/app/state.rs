@@ -15,6 +15,7 @@ pub struct SynthState {
     pub last_play_button_press: Instant,
     pub mouse_dragging: bool,
     pub mouse_start_x: u16,
+    pub mouse_start_y: u16,
     // Monophonic piano: track single key and octave/semitone offsets
     pub current_piano_key: Option<PianoKey>,
     pub current_octave: i32,
@@ -41,6 +42,7 @@ impl SynthState {
             last_play_button_press: Instant::now(),
             mouse_dragging: false,
             mouse_start_x: 0,
+            mouse_start_y: 0,
             current_piano_key: None,
             current_octave: 4,
             semitone_offset: 0,

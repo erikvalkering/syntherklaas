@@ -183,6 +183,7 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
 
             state.mouse_dragging = true;
             state.mouse_start_x = mouse.column;
+            state.mouse_start_y = mouse.row;
         }
         MouseEventKind::Up(_) => {
             state.mouse_dragging = false;
@@ -194,26 +195,30 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
                 return;
             }
 
-            let delta = mouse.column as i16 - state.mouse_start_x as i16;
+            let delta_x = mouse.column as i16 - state.mouse_start_x as i16;
+            let delta_y = mouse.row as i16 - state.mouse_start_y as i16;
             state.mouse_start_x = mouse.column;
+            state.mouse_start_y = mouse.row;
 
             match state.focused_field() {
                 FocusedField::Frequency => {
+                    // Vertical drag for frequency (Y-axis)
                     state.frequency =
-                        (state.frequency + (delta as f32 * 10.0)).clamp(20.0, 20000.0);
+                        (state.frequency + (delta_y as f32 * -10.0)).clamp(20.0, 20000.0);
                 }
                 FocusedField::Volume => {
-                    state.volume = (state.volume + (delta as f32 * 0.01)).clamp(0.0, 1.0);
+                    // Horizontal drag for volume (X-axis)
+                    state.volume = (state.volume + (delta_x as f32 * 0.01)).clamp(0.0, 1.0);
                 }
                 FocusedField::Shape => {
-                    if delta > 0 {
+                    if delta_x > 0 {
                         state.shape = match state.shape {
                             WaveShape::Sine => WaveShape::Square,
                             WaveShape::Square => WaveShape::Triangle,
                             WaveShape::Triangle => WaveShape::Sawtooth,
                             WaveShape::Sawtooth => WaveShape::Sine,
                         };
-                    } else if delta < 0 {
+                    } else if delta_x < 0 {
                         state.shape = match state.shape {
                             WaveShape::Sine => WaveShape::Sawtooth,
                             WaveShape::Square => WaveShape::Sine,
@@ -453,5 +458,63 @@ mod tests {
         let initial_shape = state.shape;
         let updated = update(state, Message::Select);
         assert_eq!(updated.shape, initial_shape);
+    }
+
+    #[test]
+    fn test_mouse_drag_frequency_vertical() {
+        use crossterm::event::{MouseEvent, MouseEventKind};
+
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(0, 0);
+        state.frequency = 440.0;
+        state.mouse_dragging = true;
+        state.mouse_start_x = 20;
+        state.mouse_start_y = 5;
+
+        // Simulate drag upward (increase frequency)
+        let mouse_drag = MouseEvent {
+            kind: MouseEventKind::Drag(crossterm::event::MouseButton::Left),
+            column: 20,
+            row: 3, // Move up (3 < 5)
+            modifiers: crossterm::event::KeyModifiers::empty(),
+        };
+        handle_mouse_event(&mut state, mouse_drag);
+        // Moving up (row 3, started at 5) means delta_y = -2, which multiplied by -10.0 = +20
+        // So frequency should increase
+        assert!(
+            state.frequency > 440.0,
+            "Expected frequency > 440.0, got {}",
+            state.frequency
+        );
+    }
+
+    #[test]
+    fn test_mouse_drag_volume_horizontal() {
+        use crossterm::event::{MouseEvent, MouseEventKind};
+
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(1, 0);
+        state.volume = 0.5;
+
+        // Simulate mouse down
+        let mouse_down = MouseEvent {
+            kind: MouseEventKind::Down(crossterm::event::MouseButton::Left),
+            column: 10,
+            row: 5,
+            modifiers: crossterm::event::KeyModifiers::empty(),
+        };
+        handle_mouse_event(&mut state, mouse_down);
+        assert!(state.mouse_dragging);
+
+        // Simulate drag rightward (increase volume)
+        let mouse_drag = MouseEvent {
+            kind: MouseEventKind::Drag(crossterm::event::MouseButton::Left),
+            column: 15, // Move right
+            row: 5,
+            modifiers: crossterm::event::KeyModifiers::empty(),
+        };
+        handle_mouse_event(&mut state, mouse_drag);
+        // Moving right increases volume
+        assert!(state.volume > 0.5);
     }
 }
