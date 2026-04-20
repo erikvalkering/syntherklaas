@@ -42,6 +42,9 @@ pub enum Message {
     MoveLeft,
     MoveRight,
 
+    // Select/Toggle focused widget
+    Select,
+
     // Timeout-based release detection
     CheckTimeoutRelease,
 

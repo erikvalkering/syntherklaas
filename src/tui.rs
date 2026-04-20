@@ -241,7 +241,14 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
             // Navigate right within current row (mainly for waveforms on row 2)
             Some(Message::MoveRight)
         }
-        KeyCode::Char(' ') => Some(Message::TogglePlay),
+        KeyCode::Char(' ') => {
+            // Space: select focused widget on waveforms, toggle play on sliders
+            if state.focus.row == 2 {
+                Some(Message::Select)
+            } else {
+                Some(Message::TogglePlay)
+            }
+        }
         KeyCode::Esc | KeyCode::Char('q') => Some(Message::Exit),
 
         _ => None,

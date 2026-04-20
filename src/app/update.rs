@@ -81,6 +81,20 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
             let max_col = if state.focus.row == 2 { 3 } else { 0 };
             state.focus = state.focus.move_right(max_col);
         }
+        Message::Select => {
+            // Select focused widget - on waveform row, select that waveform
+            if state.focus.row == 2 {
+                let waveform = match state.focus.col {
+                    0 => WaveShape::Sine,
+                    1 => WaveShape::Square,
+                    2 => WaveShape::Triangle,
+                    3 => WaveShape::Sawtooth,
+                    _ => return state,
+                };
+                state.shape = waveform;
+            }
+            // On sliders, space still toggles play
+        }
         Message::KeyboardKeyDown(key_option) => {
             if let Some(key) = key_option {
                 state.current_piano_key = Some(key);
@@ -389,5 +403,55 @@ mod tests {
         state.focus = FocusPosition::new(0, 0);
         let updated = update(state, Message::FocusPrev);
         assert_eq!(updated.focus.row, 2);
+    }
+
+    #[test]
+    fn test_select_waveform_sine() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 0);
+        let updated = update(state, Message::Select);
+        assert_eq!(updated.shape, WaveShape::Sine);
+    }
+
+    #[test]
+    fn test_select_waveform_square() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 1);
+        let updated = update(state, Message::Select);
+        assert_eq!(updated.shape, WaveShape::Square);
+    }
+
+    #[test]
+    fn test_select_waveform_triangle() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 2);
+        let updated = update(state, Message::Select);
+        assert_eq!(updated.shape, WaveShape::Triangle);
+    }
+
+    #[test]
+    fn test_select_waveform_sawtooth() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 3);
+        let updated = update(state, Message::Select);
+        assert_eq!(updated.shape, WaveShape::Sawtooth);
+    }
+
+    #[test]
+    fn test_select_on_frequency_slider_does_nothing() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(0, 0);
+        let initial_shape = state.shape;
+        let updated = update(state, Message::Select);
+        assert_eq!(updated.shape, initial_shape);
+    }
+
+    #[test]
+    fn test_select_on_volume_slider_does_nothing() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(1, 0);
+        let initial_shape = state.shape;
+        let updated = update(state, Message::Select);
+        assert_eq!(updated.shape, initial_shape);
     }
 }
