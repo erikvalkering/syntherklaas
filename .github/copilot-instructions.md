@@ -1,5 +1,22 @@
 # Copilot Instructions for syntherklaas
 
+## Development Workflow
+
+**After each change, run these commands before committing:**
+```bash
+cargo test
+cargo check
+cargo fmt
+cargo clippy
+```
+
+Or all at once:
+```bash
+cargo test && cargo check && cargo fmt && cargo clippy
+```
+
+This ensures code quality, catches issues early, and maintains consistent formatting.
+
 ## Build, Test & Run
 
 ### Building
