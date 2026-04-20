@@ -42,18 +42,44 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
             state.last_play_button_press = std::time::Instant::now();
         }
         Message::FocusNext => {
-            state.focused_field = match state.focused_field {
-                FocusedField::Frequency => FocusedField::Volume,
-                FocusedField::Volume => FocusedField::Shape,
-                FocusedField::Shape => FocusedField::Frequency,
-            };
+            // Move down one row, then wrap to top if at bottom
+            if state.focus.row < 2 {
+                state.focus = state.focus.move_down(2);
+                // Reset column to 0 when moving to a new row
+                state.focus.col = 0;
+            } else {
+                state.focus = state.focus.move_down(2);
+                // Don't wrap; stay at row 2
+            }
         }
         Message::FocusPrev => {
-            state.focused_field = match state.focused_field {
-                FocusedField::Frequency => FocusedField::Shape,
-                FocusedField::Volume => FocusedField::Frequency,
-                FocusedField::Shape => FocusedField::Volume,
-            };
+            // Move up one row, wrapping from row 0 to row 2
+            if state.focus.row > 0 {
+                state.focus = state.focus.move_up();
+                state.focus.col = 0;
+            } else {
+                // Wrap to row 2 (waveform)
+                state.focus = super::focus::FocusPosition::new(2, 0);
+            }
+        }
+        Message::MoveUp => {
+            state.focus = state.focus.move_up();
+            state.focus.col = 0;
+        }
+        Message::MoveDown => {
+            state.focus = state.focus.move_down(2);
+            state.focus.col = 0;
+        }
+        Message::MoveLeft => {
+            let max_col = if state.focus.row == 2 { 3 } else { 0 };
+            state.focus = state.focus.move_left();
+            if state.focus.col > max_col {
+                state.focus.col = max_col;
+            }
+        }
+        Message::MoveRight => {
+            let max_col = if state.focus.row == 2 { 3 } else { 0 };
+            state.focus = state.focus.move_right(max_col);
         }
         Message::KeyboardKeyDown(key_option) => {
             if let Some(key) = key_option {
@@ -157,7 +183,7 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
             let delta = mouse.column as i16 - state.mouse_start_x as i16;
             state.mouse_start_x = mouse.column;
 
-            match state.focused_field {
+            match state.focused_field() {
                 FocusedField::Frequency => {
                     state.frequency =
                         (state.frequency + (delta as f32 * 10.0)).clamp(20.0, 20000.0);
@@ -184,7 +210,7 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
                 }
             }
         }
-        MouseEventKind::ScrollUp => match state.focused_field {
+        MouseEventKind::ScrollUp => match state.focused_field() {
             FocusedField::Frequency => {
                 state.frequency = (state.frequency + 10.0).min(20000.0);
             }
@@ -193,7 +219,7 @@ pub fn handle_mouse_event(state: &mut SynthState, mouse: MouseEvent) {
             }
             _ => {}
         },
-        MouseEventKind::ScrollDown => match state.focused_field {
+        MouseEventKind::ScrollDown => match state.focused_field() {
             FocusedField::Frequency => {
                 state.frequency = (state.frequency - 10.0).max(20.0);
             }

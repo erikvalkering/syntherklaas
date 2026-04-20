@@ -1,3 +1,4 @@
+use super::focus::FocusPosition;
 use crate::music::PianoKey;
 use crate::waveform::WaveShape;
 use std::time::Instant;
@@ -10,7 +11,7 @@ pub struct SynthState {
     pub is_playing: bool,
     pub keep_playing: bool,
     pub should_exit: bool,
-    pub focused_field: FocusedField,
+    pub focus: FocusPosition,
     pub last_play_button_press: Instant,
     pub mouse_dragging: bool,
     pub mouse_start_x: u16,
@@ -36,7 +37,7 @@ impl SynthState {
             is_playing: false,
             keep_playing: false,
             should_exit: false,
-            focused_field: FocusedField::Frequency,
+            focus: FocusPosition::new(0, 0),
             last_play_button_press: Instant::now(),
             mouse_dragging: false,
             mouse_start_x: 0,
@@ -45,10 +46,61 @@ impl SynthState {
             semitone_offset: 0,
         }
     }
+
+    /// Get the current focused field as the old enum for backward compatibility
+    pub fn focused_field(&self) -> FocusedField {
+        match self.focus.row {
+            0 => FocusedField::Frequency,
+            1 => FocusedField::Volume,
+            _ => FocusedField::Shape,
+        }
+    }
 }
 
 impl Default for SynthState {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_synth_state_default_focus() {
+        let state = SynthState::new();
+        assert_eq!(state.focus.row, 0);
+        assert_eq!(state.focus.col, 0);
+    }
+
+    #[test]
+    fn test_focused_field_frequency() {
+        let state = SynthState::new();
+        assert_eq!(state.focused_field(), FocusedField::Frequency);
+    }
+
+    #[test]
+    fn test_focused_field_volume() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(1, 0);
+        assert_eq!(state.focused_field(), FocusedField::Volume);
+    }
+
+    #[test]
+    fn test_focused_field_shape() {
+        let mut state = SynthState::new();
+        state.focus = FocusPosition::new(2, 0);
+        assert_eq!(state.focused_field(), FocusedField::Shape);
+    }
+
+    #[test]
+    fn test_synth_state_initialization() {
+        let state = SynthState::new();
+        assert_eq!(state.frequency, 440.0);
+        assert_eq!(state.volume, 0.5);
+        assert_eq!(state.shape, WaveShape::Sine);
+        assert!(!state.is_playing);
+        assert!(!state.should_exit);
     }
 }

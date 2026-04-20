@@ -32,9 +32,15 @@ pub enum Message {
     ChangeOctave(i32),
     ChangeSemitone(i32),
 
-    // UI focus
+    // UI focus - old Tab/Shift-Tab based
     FocusNext,
     FocusPrev,
+
+    // UI focus - new arrow key based
+    MoveUp,
+    MoveDown,
+    MoveLeft,
+    MoveRight,
 
     // Timeout-based release detection
     CheckTimeoutRelease,

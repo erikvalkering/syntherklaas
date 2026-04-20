@@ -210,18 +210,18 @@ fn key_to_message(key: KeyEvent, state: &SynthState) -> Option<Message> {
         KeyCode::Tab => Some(Message::FocusNext),
         KeyCode::BackTab => Some(Message::FocusPrev),
         KeyCode::Up => {
-            if state.focused_field == FocusedField::Frequency {
+            if state.focused_field() == FocusedField::Frequency {
                 Some(Message::IncreaseFrequency)
-            } else if state.focused_field == FocusedField::Volume {
+            } else if state.focused_field() == FocusedField::Volume {
                 Some(Message::IncreaseVolume)
             } else {
                 None
             }
         }
         KeyCode::Down => {
-            if state.focused_field == FocusedField::Frequency {
+            if state.focused_field() == FocusedField::Frequency {
                 Some(Message::DecreaseFrequency)
-            } else if state.focused_field == FocusedField::Volume {
+            } else if state.focused_field() == FocusedField::Volume {
                 Some(Message::DecreaseVolume)
             } else {
                 None
@@ -368,7 +368,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .split(f.size());
 
     // Frequency field
-    let freq_style = if state.focused_field == FocusedField::Frequency {
+    let freq_style = if state.focused_field() == FocusedField::Frequency {
         Style::default()
             .fg(Color::Yellow)
             .add_modifier(Modifier::BOLD)
@@ -386,7 +386,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     f.render_widget(freq_para, chunks[0]);
 
     // Volume field
-    let vol_style = if state.focused_field == FocusedField::Volume {
+    let vol_style = if state.focused_field() == FocusedField::Volume {
         Style::default()
             .fg(Color::Yellow)
             .add_modifier(Modifier::BOLD)
