@@ -316,6 +316,7 @@ fn render_waveform_button(
     area: ratatui::layout::Rect,
     wave_type: WaveShape,
     active_wave: WaveShape,
+    is_focused: bool,
 ) {
     let is_active = wave_type == active_wave;
 
@@ -349,7 +350,13 @@ fn render_waveform_button(
         ),
     };
 
-    let style = if is_active {
+    let style = if is_focused {
+        // Focused: magenta border
+        Style::default()
+            .fg(Color::Magenta)
+            .add_modifier(Modifier::BOLD)
+    } else if is_active {
+        // Selected: cyan background
         Style::default()
             .fg(Color::Black)
             .bg(Color::Cyan)
@@ -437,10 +444,34 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         ])
         .split(waveform_area);
 
-    render_waveform_button(f, wave_chunks[0], WaveShape::Sine, shape);
-    render_waveform_button(f, wave_chunks[1], WaveShape::Square, shape);
-    render_waveform_button(f, wave_chunks[2], WaveShape::Triangle, shape);
-    render_waveform_button(f, wave_chunks[3], WaveShape::Sawtooth, shape);
+    render_waveform_button(
+        f,
+        wave_chunks[0],
+        WaveShape::Sine,
+        shape,
+        state.focus.row == 2 && state.focus.col == 0,
+    );
+    render_waveform_button(
+        f,
+        wave_chunks[1],
+        WaveShape::Square,
+        shape,
+        state.focus.row == 2 && state.focus.col == 1,
+    );
+    render_waveform_button(
+        f,
+        wave_chunks[2],
+        WaveShape::Triangle,
+        shape,
+        state.focus.row == 2 && state.focus.col == 2,
+    );
+    render_waveform_button(
+        f,
+        wave_chunks[3],
+        WaveShape::Sawtooth,
+        shape,
+        state.focus.row == 2 && state.focus.col == 3,
+    );
 
     // Piano keyboard
     render_piano_widget(f, chunks[3], state);
@@ -448,9 +479,9 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
     // Instructions
     let instructions = vec![
         Line::from("Piano: a-j keys | Octave: k/l | Semitone: o/p"),
-        Line::from("Waveforms: 1=Sine | 2=Square | 3=Triangle | 4=Sawtooth"),
-        Line::from("Controls: (Shift-)Tab=Switch field | ↑/↓=Adjust"),
-        Line::from("Mouse: Click piano keys | Esc/Q=Quit"),
+        Line::from("Waveforms: ↑/↓↑/↓ (rows) | ←/→ (columns) | Space (select)"),
+        Line::from("Sliders: ↑/↓ (adjust) | Mouse drag (vertical for freq, horizontal for vol)"),
+        Line::from("Tab: Cycle focus | Esc/Q: Quit"),
     ];
 
     let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
