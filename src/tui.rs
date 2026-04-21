@@ -378,7 +378,6 @@ fn render_waveform_button(
 }
 
 fn render_ui(f: &mut Frame, state: &SynthState) {
-    let frequency = state.frequency;
     let volume = state.volume;
     let shape = state.shape;
 
@@ -387,7 +386,6 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .margin(2)
         .constraints([
             Constraint::Length(3),
-            Constraint::Length(3),
             Constraint::Length(5),
             Constraint::Length(15),
             Constraint::Min(1),
@@ -395,25 +393,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         ])
         .split(f.size());
 
-    // Frequency field
-    let freq_style = if state.focused_field() == FocusedField::Frequency {
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD)
-    } else {
-        Style::default()
-    };
-    let freq_block = Block::default()
-        .title("Frequency (Hz) - Up/Down to adjust, drag to change")
-        .borders(Borders::ALL)
-        .style(freq_style);
-    let freq_text = format!("{:.0}", frequency);
-    let freq_para = Paragraph::new(freq_text)
-        .block(freq_block)
-        .alignment(Alignment::Center);
-    f.render_widget(freq_para, chunks[0]);
-
-    // Volume field
+    // Volume field (now row 0)
     let vol_style = if state.focused_field() == FocusedField::Volume {
         Style::default()
             .fg(Color::Yellow)
@@ -422,7 +402,7 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         Style::default()
     };
     let vol_block = Block::default()
-        .title("Volume - Up/Down or scroll to adjust, drag to change")
+        .title("Volume - PgUp/PgDn to adjust, drag to change")
         .borders(Borders::ALL)
         .style(vol_style);
     let vol_gauge = Gauge::default()
@@ -430,10 +410,10 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .ratio(volume as f64)
         .label(format!("{:.0}%", volume * 100.0))
         .style(Style::default().fg(Color::Green));
-    f.render_widget(vol_gauge, chunks[1]);
+    f.render_widget(vol_gauge, chunks[0]);
 
-    // Waveform buttons - split into 4 columns for each waveform
-    let waveform_area = chunks[2];
+    // Waveform buttons - split into 4 columns for each waveform (now row 1)
+    let waveform_area = chunks[1];
     let wave_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -449,46 +429,44 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         wave_chunks[0],
         WaveShape::Sine,
         shape,
-        state.focus.row == 2 && state.focus.col == 0,
+        state.focus.row == 1 && state.focus.col == 0,
     );
     render_waveform_button(
         f,
         wave_chunks[1],
         WaveShape::Square,
         shape,
-        state.focus.row == 2 && state.focus.col == 1,
+        state.focus.row == 1 && state.focus.col == 1,
     );
     render_waveform_button(
         f,
         wave_chunks[2],
         WaveShape::Triangle,
         shape,
-        state.focus.row == 2 && state.focus.col == 2,
+        state.focus.row == 1 && state.focus.col == 2,
     );
     render_waveform_button(
         f,
         wave_chunks[3],
         WaveShape::Sawtooth,
         shape,
-        state.focus.row == 2 && state.focus.col == 3,
+        state.focus.row == 1 && state.focus.col == 3,
     );
 
     // Piano keyboard
-    render_piano_widget(f, chunks[3], state);
+    render_piano_widget(f, chunks[2], state);
 
     // Instructions
     let instructions = vec![
         Line::from("Piano: a-j keys | Octave: k/l | Semitone: o/p"),
         Line::from("Waveforms: ↑/↓ (rows) | ←/→ (columns) | Space (select)"),
-        Line::from(
-            "Sliders: PgUp/PgDn (adjust) | Mouse drag (vertical for freq, horizontal for vol)",
-        ),
+        Line::from("Volume: PgUp/PgDn (adjust) | Mouse drag (horizontal)"),
         Line::from("Tab: Cycle focus | Esc/Q: Quit"),
     ];
 
     let instructions_block = Block::default().title("Instructions").borders(Borders::ALL);
     let instructions_para = Paragraph::new(instructions).block(instructions_block);
-    f.render_widget(instructions_para, chunks[4]);
+    f.render_widget(instructions_para, chunks[3]);
 
     let logo = String::from(
         "
@@ -510,5 +488,5 @@ fn render_ui(f: &mut Frame, state: &SynthState) {
         .block(logo_block)
         .centered()
         .style(Color::Red);
-    f.render_widget(logo_para, chunks[5]);
+    f.render_widget(logo_para, chunks[4]);
 }

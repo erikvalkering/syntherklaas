@@ -43,23 +43,23 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
         }
         Message::FocusNext => {
             // Move down one row, then wrap to top if at bottom
-            if state.focus.row < 2 {
-                state.focus = state.focus.move_down(2);
+            if state.focus.row < 1 {
+                state.focus = state.focus.move_down(1);
                 // Reset column to 0 when moving to a new row
                 state.focus.col = 0;
             } else {
-                state.focus = state.focus.move_down(2);
-                // Don't wrap; stay at row 2
+                state.focus = state.focus.move_down(1);
+                // Don't wrap; stay at row 1
             }
         }
         Message::FocusPrev => {
-            // Move up one row, wrapping from row 0 to row 2
+            // Move up one row, wrapping from row 0 to row 1
             if state.focus.row > 0 {
                 state.focus = state.focus.move_up();
                 state.focus.col = 0;
             } else {
-                // Wrap to row 2 (waveform)
-                state.focus = super::focus::FocusPosition::new(2, 0);
+                // Wrap to row 1 (waveform)
+                state.focus = super::focus::FocusPosition::new(1, 0);
             }
         }
         Message::MoveUp => {
@@ -67,23 +67,23 @@ pub fn update(mut state: SynthState, msg: Message) -> SynthState {
             state.focus.col = 0;
         }
         Message::MoveDown => {
-            state.focus = state.focus.move_down(2);
+            state.focus = state.focus.move_down(1);
             state.focus.col = 0;
         }
         Message::MoveLeft => {
-            let max_col = if state.focus.row == 2 { 3 } else { 0 };
+            let max_col = if state.focus.row == 1 { 3 } else { 0 };
             state.focus = state.focus.move_left();
             if state.focus.col > max_col {
                 state.focus.col = max_col;
             }
         }
         Message::MoveRight => {
-            let max_col = if state.focus.row == 2 { 3 } else { 0 };
+            let max_col = if state.focus.row == 1 { 3 } else { 0 };
             state.focus = state.focus.move_right(max_col);
         }
         Message::Select => {
             // Select focused widget - on waveform row, select that waveform
-            if state.focus.row == 2 {
+            if state.focus.row == 1 {
                 let waveform = match state.focus.col {
                     0 => WaveShape::Sine,
                     1 => WaveShape::Square,
@@ -259,9 +259,9 @@ mod tests {
     #[test]
     fn test_move_up_from_frequency() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 1);
+        state.focus = FocusPosition::new(1, 1);
         let updated = update(state, Message::MoveUp);
-        assert_eq!(updated.focus.row, 1);
+        assert_eq!(updated.focus.row, 0);
         assert_eq!(updated.focus.col, 0);
     }
 
@@ -285,24 +285,24 @@ mod tests {
     #[test]
     fn test_move_down_clamps_to_max() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 0);
+        state.focus = FocusPosition::new(1, 0);
         let updated = update(state, Message::MoveDown);
-        assert_eq!(updated.focus.row, 2);
+        assert_eq!(updated.focus.row, 1);
     }
 
     #[test]
     fn test_move_left_on_waveform() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 2);
+        state.focus = FocusPosition::new(1, 2);
         let updated = update(state, Message::MoveLeft);
-        assert_eq!(updated.focus.row, 2);
+        assert_eq!(updated.focus.row, 1);
         assert_eq!(updated.focus.col, 1);
     }
 
     #[test]
     fn test_move_left_clamps_to_zero() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 0);
+        state.focus = FocusPosition::new(1, 0);
         let updated = update(state, Message::MoveLeft);
         assert_eq!(updated.focus.col, 0);
     }
@@ -310,16 +310,16 @@ mod tests {
     #[test]
     fn test_move_right_on_waveform() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 0);
+        state.focus = FocusPosition::new(1, 0);
         let updated = update(state, Message::MoveRight);
-        assert_eq!(updated.focus.row, 2);
+        assert_eq!(updated.focus.row, 1);
         assert_eq!(updated.focus.col, 1);
     }
 
     #[test]
     fn test_move_right_clamps_to_max() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 3);
+        state.focus = FocusPosition::new(1, 3);
         let updated = update(state, Message::MoveRight);
         assert_eq!(updated.focus.col, 3);
     }
@@ -388,32 +388,32 @@ mod tests {
         assert_eq!(updated.focus.row, 1);
 
         let updated2 = update(updated, Message::FocusNext);
-        assert_eq!(updated2.focus.row, 2);
+        assert_eq!(updated2.focus.row, 1);
     }
 
     #[test]
     fn test_focus_prev_cycles() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 1);
+        state.focus = FocusPosition::new(1, 1);
         let updated = update(state, Message::FocusPrev);
-        assert_eq!(updated.focus.row, 1);
+        assert_eq!(updated.focus.row, 0);
 
         let updated2 = update(updated, Message::FocusPrev);
-        assert_eq!(updated2.focus.row, 0);
+        assert_eq!(updated2.focus.row, 1);
     }
 
     #[test]
-    fn test_focus_prev_wraps_from_zero_to_two() {
+    fn test_focus_prev_wraps_from_zero_to_one() {
         let mut state = SynthState::new();
         state.focus = FocusPosition::new(0, 0);
         let updated = update(state, Message::FocusPrev);
-        assert_eq!(updated.focus.row, 2);
+        assert_eq!(updated.focus.row, 1);
     }
 
     #[test]
     fn test_select_waveform_sine() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 0);
+        state.focus = FocusPosition::new(1, 0);
         let updated = update(state, Message::Select);
         assert_eq!(updated.shape, WaveShape::Sine);
     }
@@ -421,7 +421,7 @@ mod tests {
     #[test]
     fn test_select_waveform_square() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 1);
+        state.focus = FocusPosition::new(1, 1);
         let updated = update(state, Message::Select);
         assert_eq!(updated.shape, WaveShape::Square);
     }
@@ -429,7 +429,7 @@ mod tests {
     #[test]
     fn test_select_waveform_triangle() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 2);
+        state.focus = FocusPosition::new(1, 2);
         let updated = update(state, Message::Select);
         assert_eq!(updated.shape, WaveShape::Triangle);
     }
@@ -437,7 +437,7 @@ mod tests {
     #[test]
     fn test_select_waveform_sawtooth() {
         let mut state = SynthState::new();
-        state.focus = FocusPosition::new(2, 3);
+        state.focus = FocusPosition::new(1, 3);
         let updated = update(state, Message::Select);
         assert_eq!(updated.shape, WaveShape::Sawtooth);
     }
